@@ -1,0 +1,12 @@
+LIBRARY 2dxtra
+
+EXPORTS
+    Version
+    Score_Set
+    Score_Clear
+    Score_SetRival
+    Score_ClearRival
+    Chart_Exists
+    Is_Custom_Chart
+    Get_Last_Chart_ID
+    Get_Last_Note_Count

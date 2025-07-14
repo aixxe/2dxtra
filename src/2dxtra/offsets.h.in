@@ -1,0 +1,114 @@
+#pragma once
+
+#include <string>
+#include <vector>
+#include <windows.h>
+
+struct offsets
+{
+    std::string GAME_VERSION;
+
+    std::uintptr_t DLL_CODE_SIZE;
+    std::uintptr_t DLL_ENTRYPOINT;
+    std::uintptr_t DLL_IMAGE_SIZE;
+
+    // offsets: code
+    std::uint8_t* SOFT_REV_PATCH;         // must be called after the patch used by omnimix
+    std::uint8_t* INPUT_POLL_FN;          // provides input to the game from the IO device (IO::InputManagerIIDX@3)
+    std::uint8_t* ARENA_PHASE_PATCH;      // reads the arena phase. used to force local arena only
+    std::uint8_t* MUSIC_SELECT_CTOR;      // called once when entering music select
+    std::uint8_t* DAN_SELECT_CTOR;        // called once when entering course select
+    std::uint8_t* SCENE_DTOR;             // called on scene destruction to disable chart switching
+    std::uint8_t* STAGE_RESULT_FN;        // called once when entering stage result
+    std::uint8_t* RESET_STATE_FN;         // called during card in, zeroes existing score data
+    std::uint8_t* MSELECT_GENRE_A;        // instruction that renders music select genre text
+    std::uint8_t* MSELECT_GENRE_B;        // instruction that determines whether to use genre texture
+    std::uint8_t* MSELECT_GENRE_C;        // function that calls MSELECT_GENRE_A, has the song pointer
+    std::uint8_t* TEXT_RENDER_FN;         // the function the above instruction would've called
+    std::uint8_t* TEXT_INIT_FN;           // initializes a structure used for rendering text
+    std::uint8_t* RESULT_ARTIST_FN;       // renders the artist text on the result screen
+    std::uint8_t* LOAD_CHART_FN_A;        // function that calls the function below
+    std::uint8_t* LOAD_CHART_FN_B;        // function that loads a .1 from disk into memory
+    std::uint8_t* REMAP_INDEX_FN;         // remaps game index to a .1 chart index
+    std::uint8_t* SCORE_INVALID_FN;       // returns depending on if illegal modifiers are active
+    std::uint8_t* XRPC_APPLY_FN;          // function at calls xrpc_apply from avs2-ea3
+    std::uint8_t* REG_DISPATCH_FN;        // function responsible for firing score save requests
+    std::uint8_t* REG_PATCH_ADDR;         // call in above function which actually fires the request
+    std::uint8_t* DAN_SAVE_FN;            // used to determine whether dan results should be saved
+    std::uint8_t* EAAPPLI_SAVE_FN;        // used to determine whether eamuse app is allowed to save
+    std::uint8_t* MDATA_LOAD_FN;          // called shortly after the music_data structure is populated
+    std::uint8_t* IS_BTN_DOWN_FN_A;       // seemingly determines key state (used for auto play)
+    std::uint8_t* IS_BTN_DOWN_FN_B;       // basically the same thing but we need to hook both
+    std::uint8_t* AUTO_BEAM_PATCH;        // patch out auto check for lane beams
+    std::uint8_t* CARD_OUT_VFUNC;         // constructor vft entry for CCardOutScene
+    std::uint8_t* RENDERER_PATCH;         // bytes we patch out to make swapping pointer more reliable
+    std::uint8_t* APPLY_RANDOM_FN;        // function that applies the random modifier
+    std::uint8_t* DARK_MODE_PATCH;        // renders most of the play field black
+    std::uint8_t* MEASURE_PATCH;          // removes measure lines from the play area
+    std::uint8_t* BPM_BAR_PATCH;          // removes the pulsing bpm bar from the play area
+    std::uintptr_t BPM_BAR_PATCH_JMP;     // relative jump for above patch to skip bar render
+    std::uint8_t* PLAY_FIELD_LOAD;        // populates the play field structure with notes
+    std::uint8_t* RETRY_CHECK_A;          // quick retry check that tests the EFFECT bit
+    std::uint8_t* RETRY_CHECK_B;          // quick retry check that tests the VEFX bit
+    std::uint8_t* GHOST_TARGET_FN;        // hook for overriding the "+????" pacemaker ghost text
+    std::uint8_t* GRAPH_TARGET_FN;        // hook for overriding the "TARGET:+????" pacemaker text
+    std::uint8_t* GRAPH_CONDITION;        // check that determines whether to draw the "TARGET:" text
+    std::uint8_t* FAIL_ANIMATION_FN;      // call that starts playing the stage failed animation
+    std::uint8_t* FAIL_PLAY_SFX_FN;       // call that starts playing the stage failed sound effect
+    std::uint8_t* FAIL_DURATION_JMP;      // call that checks if the stage failed animation is done
+    std::uint8_t* GET_MUSIC_DATA;         // returns a pointer to the music_data.bin file in memory
+    std::uint8_t* GET_APP_CONFIG;         // returns a pointer to CApplicationConfig
+    std::uint8_t* WNDPROC_FN;             // "PropClassWindowProc" wndproc for game window
+    std::uint8_t* TIMING_HOOK_FN;         // final method to update the timing windows before play
+    std::uint8_t* ATTRACT_SELECT_FN;      // function that picks the next attract song to play
+
+    // offsets: variables
+    std::uint8_t* GAME_MODEL;             // only used for debug builds to set the model after boot
+    std::uint8_t* GAME_STATE;             // general game state data
+    std::uint8_t* INPUT_ADDR;             // bitfield of various button states (TODO: same as InputManagerIIDX, merge?)
+    std::uint8_t* SCORES_P1;              // player 1 score data
+    std::uint8_t* SCORES_P2;              // player 2 score data
+    std::uint8_t* RIVAL_SCORES_P1;        // player 1 rival score data
+    std::uint8_t* RIVAL_SCORES_P2;        // player 2 rival score data
+    std::uint8_t* D3D9_DEVICE;            // pointer to the game IDirect3DDevice9 (186C09078 + 0xE0)
+    std::uint8_t* AUTO_PLAY;              // whether autoplay is enabled
+    std::uint8_t* RANDOM_COLUMNS;         // note column order after random is applied
+    std::uint8_t* IN_GAMEPLAY;            // random address found from scanning 1/0 when in/out of gameplay
+    std::uint8_t* DEAD_STATE;             // whether the players are considered 'alive'
+    std::uint8_t* SCORE_CURRENT_P1;       // current p1 score
+    std::uint8_t* NOTE_CURRENT_P1;        // current p1 note
+    std::uint8_t* NOTE_TOTAL_P1;          // total p1 notes
+    std::uint8_t* SCORE_CURRENT_P2;       // current p2 score
+    std::uint8_t* NOTE_CURRENT_P2;        // current p2 note
+    std::uint8_t* NOTE_TOTAL_P2;          // total p2 notes
+    std::uint8_t* PACEMAKER_TARGET;       // target pacemaker value
+    std::uint8_t* CURRENT_SCORE_PB;       // personal best for the current chart used by pacemaker
+    std::uint8_t* PACEMAKER_TYPE_ID;      // pacemaker type (e.g. 1 = my best, 20 = AAA)
+};
+
+auto inline resolve_offsets(std::uint8_t* base) -> std::optional<offsets>
+{
+    auto versions = std::vector<offsets> {};
+
+    // populated at build-time from src/2dxtra/offsets/*.cc
+    @ALL_OFFSETS@
+
+    auto const dos = reinterpret_cast<IMAGE_DOS_HEADER*>(base);
+    auto const nt = reinterpret_cast<IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
+
+    for (auto&& version: versions)
+    {
+        if (nt->OptionalHeader.SizeOfCode != version.DLL_CODE_SIZE)
+            continue;
+
+        if (nt->OptionalHeader.AddressOfEntryPoint != version.DLL_ENTRYPOINT)
+            continue;
+
+        if (nt->OptionalHeader.SizeOfImage != version.DLL_IMAGE_SIZE)
+            continue;
+
+        return version;
+    }
+
+    return std::nullopt;
+}
