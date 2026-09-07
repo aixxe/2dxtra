@@ -25,10 +25,15 @@ namespace iidxtra::unrandomizer
 
 	auto is_valid(const std::uint8_t player) -> bool
 	{
-		auto seen = std::array<bool, 7> {};
+		auto seen = std::array<bool, lane_count> {};
 
 		for (auto const i: player == 0 ? column_lut_p1: column_lut_p2)
+		{
+			if (i >= lane_count)
+				return false;
+
 			seen[i] = true;
+		}
 
 		return std::ranges::all_of(seen, [] (auto v) { return v; });
 	}
@@ -58,10 +63,10 @@ namespace iidxtra::unrandomizer
 		// convert textage compatible setting into value expected by the game
 		auto const& lut = (player == 0 ? column_lut_p1 : column_lut_p2);
 
-		for (auto i = 0; i < 7; i++)
+		for (auto i = std::size_t { 0 }; i < lane_count; i++)
 		{
 			auto const value = lut[i];
-			bm2dx::random_data->columns[player][value] = i;
+			bm2dx::random_data->columns[player][value] = static_cast<std::uint32_t>(i);
 		}
 
         // if player is present, invalidate score
@@ -75,10 +80,14 @@ namespace iidxtra::unrandomizer
 	{
 		auto result = std::string {};
 
-		for (auto i = 0; i < 7; i++)
+		for (auto i = std::size_t { 0 }; i < lane_count; i++)
 		{
 			auto const value = bm2dx::random_data->columns[player][i];
-			values[value] = i;
+
+			if (value >= lane_count)
+				continue;
+
+			values[value] = static_cast<std::uint8_t>(i);
 		}
 
 		for (auto const column: values)

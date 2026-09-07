@@ -27,7 +27,7 @@ namespace iidxtra::card_out_hook
 		original_card_out_fn = *target;
 
 		// now overwrite with our hook function
-		*target = card_out_hook_fn;
+		*target = reinterpret_cast<void*>(card_out_hook_fn);
 	}
 
 	auto uninstall_hook() -> void

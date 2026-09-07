@@ -8,6 +8,7 @@
 #include "../features/autoplay.h"
 #include "../features/cn_override.h"
 #include "../features/regular_speed.h"
+#include "../features/chart_speed.h"
 #include "../features/scratch_swap.h"
 #include "../features/unrandomizer.h"
 #include "../features/keysound_switch.h"
@@ -33,11 +34,7 @@ namespace iidxtra::reset_state_hook
 		// clear scores
 		score_set::custom.clear();
 
-		if (score_set::stock_p1 != nullptr && score_set::stock_p2 != nullptr)
-		{
-			ZeroMemory(score_set::stock_p1, sizeof(bm2dx::player_scores_t));
-			ZeroMemory(score_set::stock_p2, sizeof(bm2dx::player_scores_t));
-		}
+		score_set::clear_stock();
 
 		log::debug("Cleared score data");
 
@@ -51,6 +48,7 @@ namespace iidxtra::reset_state_hook
             autoplay::reset();
             cn_override::reset();
             regular_speed::reset();
+            chart_speed::reset();
             scratch_swap::reset();
             unrandomizer::reset();
             keysound_switch::reset();
@@ -64,5 +62,5 @@ namespace iidxtra::reset_state_hook
 	}
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->RESET_STATE_FN, reset_state_hook_fn, &original_reset_state_fn); }
+		{ MH_CreateHook(bm2dx::addr->RESET_STATE_FN, reinterpret_cast<LPVOID>(reset_state_hook_fn), &original_reset_state_fn); }
 }

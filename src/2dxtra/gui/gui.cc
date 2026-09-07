@@ -1,6 +1,6 @@
 #include <meta.h>
-#include <backends/imgui_impl_dx9.h>
-#include <backends/imgui_impl_win32.h>
+#include <imgui_impl_dx9.h>
+#include <imgui_impl_win32.h>
 #include "gui.h"
 #include "log_window.h"
 #include "main_window.h"
@@ -39,12 +39,17 @@ namespace iidxtra::gui
         io.DisplaySize = ImVec2(1920, 1080);
 
         IDirect3DSurface9* back_buffer = nullptr;
-        renderer_hook::device_ptr->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer);
-        auto desc = D3DSURFACE_DESC {};
-        if (FAILED(back_buffer->GetDesc(&desc)))
+
+        if (SUCCEEDED(renderer_hook::device_ptr->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer))
+            && back_buffer != nullptr)
+        {
+            auto desc = D3DSURFACE_DESC {};
+
+            if (SUCCEEDED(back_buffer->GetDesc(&desc)))
+                io.DisplaySize = ImVec2(static_cast<float>(desc.Width), static_cast<float>(desc.Height));
+
             back_buffer->Release();
-        else
-            io.DisplaySize = ImVec2(desc.Width, desc.Height);
+        }
 
         io.IniFilename = nullptr;
         io.BackendPlatformName = "imgui_impl_2dxtra";

@@ -9,6 +9,9 @@ auto Version() -> const char*
 
 auto Score_Set(const char* id, std::uint8_t player, std::int32_t clear, std::int32_t miss, std::int32_t score) -> void
 {
+	if (player > 1)
+		return;
+
 	iidxtra::score_set::custom[id].clear[player] = clear;
 	iidxtra::score_set::custom[id].miss[player] = miss;
 	iidxtra::score_set::custom[id].score[player] = score;
@@ -34,16 +37,7 @@ auto Score_ClearRival() -> void
 }
 
 auto Chart_Exists(const char* id) -> bool
-{
-	// LMAO
-	for (auto const& set: iidxtra::chart_set::custom)
-		for (auto const& music: set.second.music)
-			for (auto const& chart: music.second.charts)
-				if (chart.second.id == id)
-					return true;
-
-	return false;
-}
+	{ return iidxtra::chart_set::exists(id); }
 
 auto Is_Custom_Chart(std::uint8_t player) -> bool
 {

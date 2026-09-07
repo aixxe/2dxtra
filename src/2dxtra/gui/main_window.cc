@@ -1,4 +1,5 @@
 #include <meta.h>
+#include <cmath>
 #include <string>
 #include "gui.h"
 #include "loader.h"
@@ -8,8 +9,10 @@
 #include "timing_modifier_window.h"
 #include "autoretry_window.h"
 #include "../game.h"
+#include "../chart_set.h"
 #include "../features/autoplay.h"
 #include "../features/regular_speed.h"
+#include "../features/chart_speed.h"
 #include "../features/keysound_switch.h"
 #include "../features/play_visuals.h"
 
@@ -33,7 +36,7 @@ namespace iidxtra::gui::main_window
 		// window setup
 		ImGui::SetNextWindowFocus();
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
-		ImGui::SetNextWindowSize({550, 425});
+		ImGui::SetNextWindowSize({550, 450});
 		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDecoration);
 
         // usage hints
@@ -146,6 +149,24 @@ namespace iidxtra::gui::main_window
 						ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Removes all BPM changes from a chart");
 					}
 
+                    // Chart Speed
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Chart Speed");
+                            ImGui::SameLine();
+                            ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
+                            ImGui::SameLine(300);
+                            ImGui::BeginDisabled(!chart_set::switch_enabled);
+                            ImGui::SetNextItemWidth(100);
+                            if (ImGui::SliderFloat("##ChartSpeed", &chart_speed::rate, 0.50f, 3.00f, "x%.2f"))
+                                chart_speed::rate = std::round(chart_speed::rate * 20.0f) / 20.0f;
+                            ImGui::EndDisabled();
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Alter the chart to be faster or slower");
+                    }
+
                     // CN Transformer
                 	{
                 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
@@ -175,7 +196,7 @@ namespace iidxtra::gui::main_window
                                 autoretry_window::visible = true;
                         }
                         ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Retry when unable to reach pacemaker score");
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Retry when unable to meet pacemaker score");
                     }
 
 					// Keysound Switch
@@ -212,7 +233,7 @@ namespace iidxtra::gui::main_window
                         {
                             ImGui::Text("Dark Mode");
                             ImGui::SameLine(300);
-                            ImGui::BeginDisabled(*bm2dx::in_gameplay);
+                            ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##DarkMode", &play_visuals::dark_mode))
                                 play_visuals::update_dark_mode();
                             ImGui::EndDisabled();
@@ -226,7 +247,7 @@ namespace iidxtra::gui::main_window
                         {
                             ImGui::Text("Disable Measure Lines");
                             ImGui::SameLine(300);
-                            ImGui::BeginDisabled(*bm2dx::in_gameplay);
+                            ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##HideMeasureLines", &play_visuals::no_measure_lines))
                                 play_visuals::update_no_measure_lines();
                             ImGui::EndDisabled();
@@ -240,7 +261,7 @@ namespace iidxtra::gui::main_window
                         {
                             ImGui::Text("Disable BPM Gradient");
                             ImGui::SameLine(300);
-                            ImGui::BeginDisabled(*bm2dx::in_gameplay);
+                            ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##HideBPMGradient", &play_visuals::no_bpm_gradient))
                                 play_visuals::update_no_bpm_gradient();
                             ImGui::EndDisabled();

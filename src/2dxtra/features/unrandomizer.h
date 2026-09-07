@@ -5,7 +5,9 @@
 
 namespace iidxtra::unrandomizer
 {
-	using random_lut_t = std::array<std::uint8_t, 7>;
+	auto constexpr lane_count = std::size_t { bm2dx::SCRATCH_COLUMN };
+
+	using random_lut_t = std::array<std::uint8_t, lane_count>;
 
 	extern bool enabled_p1;
 	extern bool enabled_p2;

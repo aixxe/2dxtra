@@ -2,8 +2,18 @@ name: Build (MSVC)
 
 on:
   push:
+    branches:
+      - master
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VCPKG_DEFAULT_TRIPLET: x64-windows-static
+  VCPKG_DISABLE_METRICS: 1
+  VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/overlay/ports
 
 jobs:
   build:
@@ -11,19 +21,34 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Prepare vcpkg binary cache
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE '.vcpkg/binary-cache') | Out-Null
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          binaryCachePath: '${{ github.workspace }}/.vcpkg/binary-cache'
+          doNotCache: false
 
       - name: Configure CMake
+        shell: pwsh
         run: |
-          cmake -S . -B build/ `
-            -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build `
+            -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET="${env:VCPKG_DEFAULT_TRIPLET}"
 
       - name: Build with CMake
-        run: |
-          cmake --build build/ --config Release
+        run: cmake --build build --config Release --parallel
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts
+          name: 2dxtra
           path: build/Release/2dxtra.dll
+          if-no-files-found: error

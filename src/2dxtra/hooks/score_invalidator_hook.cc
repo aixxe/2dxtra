@@ -73,5 +73,5 @@ namespace iidxtra::score_invalidator_hook
     }
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->SCORE_INVALID_FN, score_invalidator_hook_fn, &original_score_invalidator_fn); }
+		{ MH_CreateHook(bm2dx::addr->SCORE_INVALID_FN, reinterpret_cast<LPVOID>(score_invalidator_hook_fn), &original_score_invalidator_fn); }
 }

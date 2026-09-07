@@ -5,6 +5,8 @@
 
 namespace iidxtra::scratch_swap
 {
+	using enum bm2dx::chart_event_type;
+
 	auto enabled_p1 = false;
 	auto enabled_p2 = false;
 
@@ -22,7 +24,7 @@ namespace iidxtra::scratch_swap
 	auto mutate(const std::uint8_t player, std::vector<bm2dx::chart_event_t>& buffer) -> void
 	{
     	auto rng = std::default_random_engine { std::random_device {} () };
-		auto dist = std::uniform_int_distribution { 0, 6 };
+		auto dist = std::uniform_int_distribution { 0, bm2dx::SCRATCH_COLUMN - 1 };
 
 		auto const enabled = (player == 0 ? enabled_p1: enabled_p2);
 
@@ -41,36 +43,36 @@ namespace iidxtra::scratch_swap
 
 		for (auto& event: buffer)
 		{
-			if (event.type == 6)
+			if (event.type == END_OF_SONG)
 				break;
 
 			if (bm2dx::state->play_style == 1)
 			{
-				if (enabled_p1 && (event.type == 0 || event.type == 2))
+				if (enabled_p1 && (event.type == NOTE_P1 || event.type == SAMPLE_P1))
 				{
 					// LEFT play side (use P1 lane setting)
 					if (event.parameter == target_lane_p1)
-						event.parameter = 7;
-					else if (event.parameter == 7)
+						event.parameter = bm2dx::SCRATCH_COLUMN;
+					else if (event.parameter == bm2dx::SCRATCH_COLUMN)
 						event.parameter = target_lane_p1;
 				}
-				else if (enabled_p2 && (event.type == 1 || event.type == 3))
+				else if (enabled_p2 && (event.type == NOTE_P2 || event.type == SAMPLE_P2))
 				{
 					// RIGHT play side (use P2 lane setting)
 					if (event.parameter == target_lane_p2)
-						event.parameter = 7;
-					else if (event.parameter == 7)
+						event.parameter = bm2dx::SCRATCH_COLUMN;
+					else if (event.parameter == bm2dx::SCRATCH_COLUMN)
 						event.parameter = target_lane_p2;
 				}
 			}
 			else
 			{
-				if (event.type != 0 && event.type != 2)
+				if (event.type != NOTE_P1 && event.type != SAMPLE_P1)
 					continue;
 
 				if (event.parameter == target_lane)
-					event.parameter = 7;
-				else if (event.parameter == 7)
+					event.parameter = bm2dx::SCRATCH_COLUMN;
+				else if (event.parameter == bm2dx::SCRATCH_COLUMN)
 					event.parameter = target_lane;
 			}
 		}

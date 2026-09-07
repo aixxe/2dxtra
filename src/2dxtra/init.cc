@@ -1,14 +1,18 @@
+#include <filesystem>
 #include <MinHook.h>
 #include "chart_set.h"
 #include "score_set.h"
+#include "database.h"
 #include "hooks/input_hook.h"
 #include "hooks/network_hook.h"
 #include "hooks/chart_load_hook.h"
+#include "hooks/chart_analyze_hook.h"
 #include "hooks/dan_select_hook.h"
 #include "hooks/music_select_hook.h"
 #include "hooks/stage_result_hook.h"
 #include "hooks/mselect_genre_hook.h"
 #include "hooks/mdata_load_hook.h"
+#include "hooks/boot_screen_hook.h"
 #include "hooks/renderer_hook.h"
 #include "hooks/reset_state_hook.h"
 #include "hooks/result_title_hook.h"
@@ -20,6 +24,7 @@
 #include "features/autoplay.h"
 #include "features/unrandomizer.h"
 #include "features/autoretry.h"
+#include "features/chart_speed.h"
 
 namespace iidxtra
 {
@@ -29,17 +34,21 @@ namespace iidxtra
 
 		MH_Initialize();
 
-		// Find custom charts on disk.
+		// Open the chart database next to the module.
 		wchar_t module_path[MAX_PATH] = {};
 		GetModuleFileNameW(module, module_path, MAX_PATH);
 
 		auto const cwd = std::filesystem::path { module_path }.remove_filename();
-		mdata_load_hook::gather_custom_sets(cwd/"2dxtra/charts");
+		auto const db_path = (cwd / "2dxtra.sqlite").string();
+		auto const db = database::open(db_path.c_str());
+
+		chart_set::init(db);
 
 		// Allocate memory.
 		score_set::init();
 
 		// Initialize hooks.
+		chart_analyze_hook::install(db);
 		input_hook::install_hook();
 		network_hook::install_hook();
 		chart_load_hook::install_hook();
@@ -48,6 +57,7 @@ namespace iidxtra
 		stage_result_hook::install_hook();
 		mselect_genre_hook::install_hook();
 		mdata_load_hook::install_hook();
+        boot_screen_hook::install_hook();
         reset_state_hook::install_hook();
         result_title_hook::install_hook();
 		score_invalidator_hook::install_hook();
@@ -58,6 +68,7 @@ namespace iidxtra
 		autoplay::install_hook();
 		unrandomizer::install_hook();
 		attract_randomizer_hook::install_hook();
+		chart_speed::install_hook();
 
 		// Enable all hooks.
 		MH_EnableHook(MH_ALL_HOOKS);
@@ -80,9 +91,10 @@ namespace iidxtra
 		score_set::uninit();
 
 		// Hooks that require extra setup.
-		mselect_genre_hook::uninstall_hook();
         renderer_hook::uninstall_hook();
 		card_out_hook::uninstall_hook();
+
+		database::close(db);
 
 		MH_Uninitialize();
 		FreeLibraryAndExitThread(static_cast<HMODULE>(param), 0);

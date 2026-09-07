@@ -1,15 +1,17 @@
+#include <algorithm>
+#include <string_view>
 #include <MinHook.h>
 #include "../log.h"
 #include "../game.h"
 #include "../score_set.h"
-#include "../util/scoped_page_permissions.h"
+#include "../util/code_patch.h"
 #include "../hooks/chart_load_hook.h"
 #include "../hooks/score_invalidator_hook.h"
 #include "network_hook.h"
 
 namespace iidxtra::network_hook
 {
-	auto blocked_requests = std::vector<std::string> {
+	auto blocked_requests = std::vector<std::string_view> {
 		bm2dx::REQUEST_LOBBY_ENTRY,
 		bm2dx::REQUEST_LOBBY_UPDATE,
 		bm2dx::REQUEST_LOBBY_DELETE,
@@ -23,14 +25,19 @@ namespace iidxtra::network_hook
 	// todo: can't be used to situationally allow music.reg/nosave and potentially others, needs more testing
 	auto xrpc_apply_hook_fn(void* handle, const char* method, void* shmem, void* cb, void* cbdata, void* valist) -> void*
 	{
-		if (std::ranges::find(blocked_requests, method) != blocked_requests.end())
+		auto const name = std::string_view { method };
+
+		auto const blocked = std::ranges::any_of(blocked_requests,
+			[&] (auto const& suffix) { return name.ends_with(suffix); });
+
+		if (blocked)
 		{
 			log::debug("Blocked request '{}'", method);
 			return nullptr;
 		}
 
 		// This always occurs after getRank, so the scores sent from the network should exist now.
-        if (std::string_view(method) == bm2dx::REQUEST_GAME_SYSTEM_INFO)
+        if (name.ends_with(bm2dx::REQUEST_GAME_SYSTEM_INFO))
 			score_set::backup();
 
 		return reinterpret_cast<void* (*) (void*, const char*, void*, void*, void*, void*)>(original_xrpc_apply_fn)(handle, method, shmem, cb, cbdata, valist);
@@ -52,27 +59,12 @@ namespace iidxtra::network_hook
             score_invalidator_hook::is_session_invalid_p1 = true;
             score_invalidator_hook::is_session_invalid_p2 = true;
 
-			// backup the bytes that would make the network request
-			std::uint8_t original_bytes[5] = {};
-			CopyMemory(original_bytes, bm2dx::addr->REG_PATCH_ADDR, sizeof(original_bytes));
+			auto static patch = util::code_patch { bm2dx::addr->REG_PATCH_ADDR,
+				{ 0x90, 0x90, 0x90, 0x90, 0x90 } };
 
-			// overwrite them with nops
-            // todo: replace this abomination with mid-fn safetyhook
-			{
-	            auto guard = util::scoped_page_permissions { bm2dx::addr->REG_PATCH_ADDR, 5, PAGE_EXECUTE_READWRITE };
-				CopyMemory(bm2dx::addr->REG_PATCH_ADDR, "\x90\x90\x90\x90\x90", 5);
-				FlushInstructionCache(GetCurrentProcess(), bm2dx::addr->REG_PATCH_ADDR, 5);
-			}
-
-			// call the original function
+			patch.enable();
 			auto result = reinterpret_cast<bool (*) ()>(original_music_reg_fn)();
-
-			// restore the original code
-			{
-				auto guard = util::scoped_page_permissions { bm2dx::addr->REG_PATCH_ADDR, 5, PAGE_EXECUTE_READWRITE };
-				CopyMemory(bm2dx::addr->REG_PATCH_ADDR, original_bytes, sizeof(original_bytes));
-				FlushInstructionCache(GetCurrentProcess(), bm2dx::addr->REG_PATCH_ADDR, 5);
-			}
+			patch.disable();
 
 			// done!
 			return result;
@@ -114,15 +106,15 @@ namespace iidxtra::network_hook
 
 	auto install_hook() -> void
 	{
-		MH_CreateHook(bm2dx::addr->XRPC_APPLY_FN, xrpc_apply_hook_fn, &original_xrpc_apply_fn);
-		MH_CreateHook(bm2dx::addr->REG_DISPATCH_FN, music_reg_hook_fn, &original_music_reg_fn);
-		MH_CreateHook(bm2dx::addr->DAN_SAVE_FN, dan_save_hook_fn, &original_dan_save_fn);
-        MH_CreateHook(bm2dx::addr->EAAPPLI_SAVE_FN, eappli_save_hook_fn, &original_eappli_save_fn);
+		MH_CreateHook(bm2dx::addr->XRPC_APPLY_FN, reinterpret_cast<LPVOID>(xrpc_apply_hook_fn), &original_xrpc_apply_fn);
+		MH_CreateHook(bm2dx::addr->REG_DISPATCH_FN, reinterpret_cast<LPVOID>(music_reg_hook_fn), &original_music_reg_fn);
+		MH_CreateHook(bm2dx::addr->DAN_SAVE_FN, reinterpret_cast<LPVOID>(dan_save_hook_fn), &original_dan_save_fn);
+        MH_CreateHook(bm2dx::addr->EAAPPLI_SAVE_FN, reinterpret_cast<LPVOID>(eappli_save_hook_fn), &original_eappli_save_fn);
 
-		// Force arena phase to 2. (local only)
-		{
-            auto guard = util::scoped_page_permissions { bm2dx::addr->ARENA_PHASE_PATCH, 6, PAGE_EXECUTE_READWRITE };
-			CopyMemory(bm2dx::addr->ARENA_PHASE_PATCH, "\xB8\x01\x00\x00\x00\xC3", 6);
-		}
+		// Force arena phase to 1. (local only)
+		auto static arena_patch = util::code_patch { bm2dx::addr->ARENA_PHASE_PATCH,
+			{ 0xB8, 0x01, 0x00, 0x00, 0x00, 0xC3 } }; // mov eax, 1; ret
+
+		arena_patch.enable();
 	}
 }

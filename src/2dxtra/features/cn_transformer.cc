@@ -1,10 +1,13 @@
 #include <array>
+#include <limits>
 #include <random>
 #include "../hooks/score_invalidator_hook.h"
 #include "cn_transformer.h"
 
 namespace iidxtra::cn_transformer
 {
+    using enum bm2dx::chart_event_type;
+
     using event_store = std::vector<std::tuple<bm2dx::chart_event_t*, std::int16_t>>;
 
     auto enabled_p1 = false;
@@ -31,6 +34,9 @@ namespace iidxtra::cn_transformer
         allow_backspin_scratch_p2 = false;
     }
 
+    auto inline is_playable_column(const std::int8_t column) -> bool
+        { return column >= 0 && column < bm2dx::PLAYABLE_COLUMNS; }
+
     // todo: make this actually fun to use (IMPOSSIBLE)
     auto inline do_transform(const std::uint8_t player, const event_store& column) -> void
     {
@@ -52,11 +58,11 @@ namespace iidxtra::cn_transformer
             auto const next_note = std::get<0>(*next);
 
             // skip instructions at offsets considered invalid
-            if (this_note->offset == 0 || this_note->offset == INT_MAX)
+            if (this_note->offset == 0 || this_note->offset == std::numeric_limits<std::int32_t>::max())
                 continue;
 
             // this is a note we just merged, ignore it
-            if (this_note->type == 7)
+            if (this_note->type == BGM)
                 continue;
 
             // make sure this would satisfy the max duration setting
@@ -74,8 +80,8 @@ namespace iidxtra::cn_transformer
             this_note->value = duration;
 
             // ...then turn next node into a background sound
-            next_note->type = 7;
-            next_note->parameter = 8;
+            next_note->type = BGM;
+            next_note->parameter = bm2dx::BGM_COLUMN;
             next_note->value = std::get<1>(*next);
 
             // advance iterator again so we skip the next note
@@ -97,11 +103,11 @@ namespace iidxtra::cn_transformer
 				return;
 		}
 
-        auto columns_p1 = std::array<event_store, 8> {};
-        auto columns_p2 = std::array<event_store, 8> {};
+        auto columns_p1 = std::array<event_store, bm2dx::PLAYABLE_COLUMNS> {};
+        auto columns_p2 = std::array<event_store, bm2dx::PLAYABLE_COLUMNS> {};
 
-        auto last_loaded_samples_p1 = std::array<int, 8> {};
-        auto last_loaded_samples_p2 = std::array<int, 8> {};
+        auto last_loaded_samples_p1 = std::array<int, bm2dx::PLAYABLE_COLUMNS> {};
+        auto last_loaded_samples_p2 = std::array<int, bm2dx::PLAYABLE_COLUMNS> {};
 
         for (auto& event: buffer)
         {
@@ -111,32 +117,32 @@ namespace iidxtra::cn_transformer
             if (is_dp)
             {
                 // in DP we just simply use the config as-is
-                is_valid_key_p1 = enabled_p1 && (event.parameter >= 0 && event.parameter <= 7);
-                is_valid_key_p2 = enabled_p2 && (event.parameter >= 0 && event.parameter <= 7);
+                is_valid_key_p1 = enabled_p1 && is_playable_column(event.parameter);
+                is_valid_key_p2 = enabled_p2 && is_playable_column(event.parameter);
 
                 if (!allow_backspin_scratch_p1)
-                    is_valid_key_p1 = (is_valid_key_p1 && event.parameter != 7);
+                    is_valid_key_p1 = (is_valid_key_p1 && event.parameter != bm2dx::SCRATCH_COLUMN);
                 else if (!allow_backspin_scratch_p2)
-                    is_valid_key_p2 = (is_valid_key_p2 && event.parameter != 7);
+                    is_valid_key_p2 = (is_valid_key_p2 && event.parameter != bm2dx::SCRATCH_COLUMN);
             }
             else
             {
                 // for SP, P2 settings need to be set on P1
-                is_valid_key_p1 = (event.parameter >= 0 && event.parameter <= 7);
+                is_valid_key_p1 = is_playable_column(event.parameter);
                 is_valid_key_p2 = false;
 
                 if ((player == 0 && !allow_backspin_scratch_p1) || (player == 1 && !allow_backspin_scratch_p2))
-                    is_valid_key_p1 = (is_valid_key_p1 && event.parameter != 7);
+                    is_valid_key_p1 = (is_valid_key_p1 && event.parameter != bm2dx::SCRATCH_COLUMN);
             }
 
-            if (event.type == 2)
+            if (event.type == SAMPLE_P1)
                 last_loaded_samples_p1[event.parameter] = event.value;
-            else if (event.type == 3)
+            else if (event.type == SAMPLE_P2)
                 last_loaded_samples_p2[event.parameter] = event.value;
 
-            if (event.type == 0 && is_valid_key_p1)
+            if (event.type == NOTE_P1 && is_valid_key_p1)
                 columns_p1[event.parameter].emplace_back(&event, last_loaded_samples_p1[event.parameter]);
-            else if (event.type == 1 && is_valid_key_p2)
+            else if (event.type == NOTE_P2 && is_valid_key_p2)
                 columns_p2[event.parameter].emplace_back(&event, last_loaded_samples_p2[event.parameter]);
         }
 

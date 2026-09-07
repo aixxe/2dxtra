@@ -1,3 +1,4 @@
+#include <cmath>
 #include "gui.h"
 #include "../input.h"
 #include "../features/timing_modifier.h"

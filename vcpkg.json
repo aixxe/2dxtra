@@ -1,0 +1,12 @@
+{
+  "dependencies": [
+    { "name": "fmt", "version>=": "12.2.0" },
+    { "name": "imgui", "version>=": "1.92.8", "features": [ "dx9-binding", "win32-binding" ] },
+    { "name": "minhook", "version>=": "1.3.4" },
+    { "name": "picosha2", "version>=": "1.0.1" },
+    { "name": "rubberband", "version>=": "4.0.0" },
+    { "name": "safetyhook", "version>=": "0.7.0" },
+    { "name": "sqlite3", "version>=": "3.53.4" },
+    { "name": "zstd", "version>=": "1.5.7" }
+  ]
+}

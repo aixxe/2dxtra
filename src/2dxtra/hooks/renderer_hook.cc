@@ -3,7 +3,7 @@
 #include "renderer_hook.h"
 #include "../game.h"
 #include "../gui/gui.h"
-#include "../util/scoped_page_permissions.h"
+#include "../util/code_patch.h"
 
 namespace iidxtra::renderer_hook
 {
@@ -43,18 +43,10 @@ namespace iidxtra::renderer_hook
 
 	auto set_renderer_freeze(bool frozen) -> void
 	{
-		auto guard = util::scoped_page_permissions { bm2dx::addr->RENDERER_PATCH, 5, PAGE_EXECUTE_READWRITE };
-    	auto static original = std::vector<std::uint8_t> { 0x00, 0x00, 0x00, 0x00, 0x00 };
+		auto static patch = util::code_patch { bm2dx::addr->RENDERER_PATCH,
+			{ 0x90, 0x90, 0x90, 0x90, 0x90 } };
 
-    	if (frozen)
-    	{
-    		CopyMemory(original.data(), bm2dx::addr->RENDERER_PATCH, 5);
-    		CopyMemory(bm2dx::addr->RENDERER_PATCH, "\x90\x90\x90\x90\x90", 5);
-    	}
-    	else
-    	{
-    		CopyMemory(bm2dx::addr->RENDERER_PATCH, original.data(), 5);
-    	}
+		frozen ? patch.enable(): patch.disable();
 
 		Sleep(25);
 	}
@@ -85,7 +77,7 @@ namespace iidxtra::renderer_hook
         *reinterpret_cast<void**>(swapchain_ptr) = replacement_vft.get();
 
         // Hook WndProc to capture keyboard/mouse input.
-        MH_CreateHook(bm2dx::addr->WNDPROC_FN, wndproc_hook_fn, (void**) &original_wndproc_fn);
+        MH_CreateHook(bm2dx::addr->WNDPROC_FN, reinterpret_cast<LPVOID>(wndproc_hook_fn), (void**) &original_wndproc_fn);
         MH_EnableHook(bm2dx::addr->WNDPROC_FN);
 
 		#ifndef NDEBUG

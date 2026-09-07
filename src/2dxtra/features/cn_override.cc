@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "../log.h"
 #include "../game.h"
 #include "../hooks/score_invalidator_hook.h"

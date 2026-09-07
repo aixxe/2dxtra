@@ -29,12 +29,12 @@ namespace iidxtra::input
         return true;
     }
 
-	auto test_game_button(std::uint8_t button) -> bool
+	auto test_game_button(const bm2dx::button button) -> bool
     {
-		auto static game_input = reinterpret_cast<bm2dx::input_t*>(bm2dx::addr->INPUT_ADDR);
-	    return std::bitset<32>(game_input->buttons).test(button);
+	    return std::bitset<32>(bm2dx::input_manager->data.buttons_edge)
+	        .test(static_cast<std::size_t>(button));
     }
 
-	auto test_menu_button(std::uint8_t button) -> bool
+	auto test_menu_button(const std::uint8_t button) -> bool
         { return std::bitset<32>(menu.buttons).test(button); }
 }

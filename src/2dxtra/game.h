@@ -1,20 +1,29 @@
 #pragma once
 
+#include <cstddef>
+#include <cstring>
 #include <optional>
 #include <offsets.h>
 #include <unordered_map>
 
 namespace bm2dx
 {
+	// enums
+	enum class play_style: int { SP = 0, DP = 1 };
+	enum class button: std::uint8_t { EFFECT = 18 };
+
 	// constants
 	auto constexpr MAX_RIVALS = 6;
-	auto constexpr MAX_ENTRIES = 32000;
+	auto constexpr CHART_EVENT_CAPACITY = 0x3000;
+	auto constexpr MAX_PLAY_NOTES = 16000;
+	auto constexpr SCRATCH_COLUMN = 7;
+	auto constexpr BGM_COLUMN = 8;
+	auto constexpr PLAYABLE_COLUMNS = 8;
 
-	// some request names used by network_hook
-	auto constexpr REQUEST_LOBBY_ENTRY = "IIDX31lobby.entry";
-	auto constexpr REQUEST_LOBBY_UPDATE = "IIDX31lobby.update";
-	auto constexpr REQUEST_LOBBY_DELETE = "IIDX31lobby.delete";
-	auto constexpr REQUEST_GAME_SYSTEM_INFO = "IIDX31gameSystem.systemInfo";
+	auto constexpr REQUEST_LOBBY_ENTRY = "lobby.entry";
+	auto constexpr REQUEST_LOBBY_UPDATE = "lobby.update";
+	auto constexpr REQUEST_LOBBY_DELETE = "lobby.delete";
+	auto constexpr REQUEST_GAME_SYSTEM_INFO = "gameSystem.systemInfo";
 
     // enums
     enum class pacemaker_type: std::uint8_t
@@ -59,17 +68,47 @@ namespace bm2dx
         bool p2;
     };
 
+    // event types in the .1 chart file format
+    enum class chart_event_type: std::uint8_t
+    {
+        NOTE_P1 = 0x00,
+        NOTE_P2 = 0x01,
+        SAMPLE_P1 = 0x02,
+        SAMPLE_P2 = 0x03,
+        TEMPO = 0x04,
+        METER = 0x05,
+        END_OF_SONG = 0x06,
+        BGM = 0x07,
+        TIMING_WINDOW = 0x08,
+        MEASURE_BAR = 0x0C,
+        NOTE_COUNT = 0x10,
+    };
+
     struct chart_event_t
 	{
 		std::int32_t offset = 0; //0x0000
-		std::int8_t type = 0; //0x0004
+		chart_event_type type = chart_event_type::NOTE_P1; //0x0004
 		std::int8_t parameter = 0; //0x0005
 		std::int16_t value = 0; //0x0006
 	}; static_assert(sizeof(chart_event_t) == 0x8);
 
+	auto constexpr CHART_BUFFER_BYTES = CHART_EVENT_CAPACITY * sizeof(chart_event_t);
+
+    // Read / write a chart event to/from the little-endian file format.
+    // The struct layout matches the on-disk record exactly.
+    auto inline read_chart_event(const std::uint8_t* p) -> chart_event_t
+    {
+        chart_event_t e {};
+        std::memcpy(&e, p, sizeof(e));
+        return e;
+    }
+
+    auto inline write_chart_event(std::uint8_t* p, const chart_event_t& e) -> void
+		{ std::memcpy(p, &e, sizeof(e)); }
+
     struct chart_buffer_t
     {
-        chart_event_t events[0x3000]; //0x0000
+        chart_event_t events[CHART_EVENT_CAPACITY]; //0x0000
         std::uint8_t pad_18000[4]; //0x18000
         std::int32_t p1_note_count; //0x18004
         std::uint8_t pad_18008[1588]; //0x18008
@@ -94,9 +133,9 @@ namespace bm2dx
     struct play_notes_t
     {
         auto begin() { return notes; }
-        auto end() { return notes + 16000; }
+        auto end() { return notes + MAX_PLAY_NOTES; }
 
-        play_note_t notes[16000]; //0x0000
+        play_note_t notes[MAX_PLAY_NOTES]; //0x0000
     }; static_assert(sizeof(play_notes_t) == 0x138800);
 
     struct play_field_t
@@ -116,8 +155,9 @@ namespace bm2dx
 
 	struct random_data_t
 	{
-		std::uint32_t columns[2][8]; //0x0000
-	}; static_assert(sizeof(random_data_t) == 0x40);
+		std::uint8_t pad_0000[0x10]; //0x0000
+		std::uint32_t columns[2][PLAYABLE_COLUMNS]; //0x0010
+	}; static_assert(sizeof(random_data_t) == 0x50);
 
 	struct CApplicationConfig
 	{
@@ -130,19 +170,23 @@ namespace bm2dx
 
 	struct input_t
 	{
-		std::uint64_t buttons; //0x0008
-		std::int8_t pad_0010[8]; //0x0010
-		std::int32_t p1_turntable; //0x0018
-		std::int32_t p1_turntable_delta; //0x001C
-		std::int32_t p2_turntable; //0x0020
-		std::int32_t p2_turntable_delta; //0x0024
-	}; static_assert(sizeof(input_t) == 0x20);
+		std::uint32_t buttons; //0x0000
+		std::uint32_t buttons_edge; //0x0004
+		std::uint8_t pad_0008[0x48]; //0x0008
+		std::int32_t p1_turntable; //0x0050
+		std::int32_t p1_turntable_delta; //0x0054
+		std::int32_t p2_turntable; //0x0058
+		std::int32_t p2_turntable_delta; //0x005C
+	}; static_assert(sizeof(input_t) == 0x60);
+
+	auto constexpr INPUT_BUTTON_BYTES = offsetof(input_t, pad_0008);
+	auto constexpr INPUT_TURNTABLE_BYTES = sizeof(input_t) - offsetof(input_t, p1_turntable);
 
     struct InputManagerIIDX
 	{
 		void* vft; //0x0000
 		input_t data; //0x0008
-	}; static_assert(sizeof(InputManagerIIDX) == 0x28);
+	}; static_assert(sizeof(InputManagerIIDX) == 0x68);
 
 	struct notes_radar_t
 	{
@@ -156,98 +200,107 @@ namespace bm2dx
 
 	struct music_entry_t
 	{
-		char title[64]; //0x0000
-		char title_ascii[64]; //0x0040
-		char genre[64]; //0x0080
-		char artist[64]; //0x00C0
-		std::int32_t texture_title; //0x0100
-		std::int32_t texture_artist; //0x0104
-		std::int32_t texture_genre; //0x0108
-		std::int32_t texture_load; //0x010C
-		std::int32_t texture_list; //0x0110
-		std::int32_t font_idx; //0x0114
-		std::uint16_t game_version; //0x0118
-		std::uint16_t other_folder; //0x011A
-		std::uint16_t bemani_folder; //0x011C
-		std::uint16_t splittable_diff; //0x011E
-		std::uint8_t spb_rating; //0x0120
-		std::uint8_t spn_rating; //0x0121
-		std::uint8_t sph_rating; //0x0122
-		std::uint8_t spa_rating; //0x0123
-		std::uint8_t spl_rating; //0x0124
-		std::uint8_t pad_0125[1]; //0x0125
-		std::uint8_t dpn_rating; //0x0126
-		std::uint8_t dph_rating; //0x0127
-		std::uint8_t dpa_rating; //0x0128
-		std::uint8_t dpl_rating; //0x0129
-		std::uint8_t pad_012A[6]; //0x012A
-		std::uint32_t spb_bpm_max; //0x0130
-		std::uint32_t spb_bpm_min; //0x0134
-		std::uint32_t spn_bpm_max; //0x0138
-		std::uint32_t spn_bpm_min; //0x013C
-		std::uint32_t sph_bpm_max; //0x0140
-		std::uint32_t sph_bpm_min; //0x0144
-		std::uint32_t spa_bpm_max; //0x0148
-		std::uint32_t spa_bpm_min; //0x014C
-		std::uint32_t spl_bpm_max; //0x0150
-		std::uint32_t spl_bpm_min; //0x0154
-		std::uint8_t pad_0158[8]; //0x0158
-		std::uint32_t dpn_bpm_max; //0x0160
-		std::uint32_t dpn_bpm_min; //0x0164
-		std::uint32_t dph_bpm_max; //0x0168
-		std::uint32_t dph_bpm_min; //0x016C
-		std::uint32_t dpa_bpm_max; //0x0170
-		std::uint32_t dpa_bpm_min; //0x0174
-		std::uint32_t dpl_bpm_max; //0x0178
-		std::uint32_t dpl_bpm_min; //0x017C
-		std::uint8_t pad_0180[48]; //0x0180
-		std::uint32_t spb_note_count; //0x01B0
-		std::uint32_t spn_note_count; //0x01B4
-		std::uint32_t sph_note_count; //0x01B8
-		std::uint32_t spa_note_count; //0x01BC
-		std::uint32_t spl_note_count; //0x01C0
-		std::uint8_t pad_01C4[4]; //0x01C4
-		std::uint32_t dpn_note_count; //0x01C8
-		std::uint32_t dph_note_count; //0x01CC
-		std::uint32_t dpa_note_count; //0x01D0
-		std::uint32_t dpl_note_count; //0x01D4
-		std::uint8_t pad_01D8[24]; //0x01D8
-		std::int32_t spb_cn_type; //0x01F0
-		std::int32_t spn_cn_type; //0x01F4
-		std::int32_t sph_cn_type; //0x01F8
-		std::int32_t spa_cn_type; //0x01FC
-		std::int32_t spl_cn_type; //0x0200
-		std::uint8_t pad_0204[4]; //0x0204
-		std::int32_t dpn_cn_type; //0x0208
-		std::int32_t dph_cn_type; //0x020C
-		std::int32_t dpa_cn_type; //0x0210
-		std::int32_t dpl_cn_type; //0x0214
-		std::uint8_t pad_0218[24]; //0x0218
-		notes_radar_t spb_notes_radar; //0x0230 0:B, 1:N, 2:H, 3:A, 4:L
-		notes_radar_t spn_notes_radar;
-		notes_radar_t sph_notes_radar;
-		notes_radar_t spa_notes_radar;
-		notes_radar_t spl_notes_radar;
-		std::uint8_t pad[0x18];
-		notes_radar_t dpn_notes_radar;
-		notes_radar_t dph_notes_radar;
-		notes_radar_t dpa_notes_radar;
-		notes_radar_t dpl_notes_radar;
-		std::uint8_t pad_0320[144]; //0x0320
-		std::int32_t id; //0x03B0
-		std::int32_t volume; //0x03B4
-		std::uint8_t pad_03B8[372]; //0x03B8
-	}; static_assert(sizeof(music_entry_t) == 0x052C);
+		/* 0x0000 */ const wchar_t title[128];
+        /* 0x0100 */ const char title_ascii[64];
+        /* 0x0140 */ const wchar_t genre[64];
+        /* 0x01C0 */ const wchar_t artist[128];
+        /* 0x02C0 */ const wchar_t license[128];
+        /* 0x03C0 */ std::int32_t texture_title;
+        /* 0x03C4 */ std::int32_t texture_artist;
+        /* 0x03C8 */ std::int32_t texture_genre;
+        /* 0x03CC */ std::int32_t texture_load;
+        /* 0x03D0 */ std::int32_t texture_list;
+        /* 0x03D4 */ std::int32_t texture_license;
+        /* 0x03D8 */ std::int32_t font_idx;
+        /* 0x03DC */ std::uint16_t game_version;
+        /* 0x03DE */ std::uint16_t other_folder;
+        /* 0x03E0 */ std::uint16_t bemani_folder;
+        /* 0x03E2 */ std::uint16_t recommend_beginner_folder;
+        /* 0x03E4 */ std::uint16_t recommend_iidx_folder;
+        /* 0x03E6 */ std::uint16_t recommend_bemani_folder;
+        /* 0x03E8 */ std::uint16_t splittable_diff;
+        /* 0x03EA */ std::uint8_t pad_03EA[2];
+        /* 0x03EC */ std::uint8_t spb_rating;
+        /* 0x03ED */ std::uint8_t spn_rating;
+        /* 0x03EE */ std::uint8_t sph_rating;
+        /* 0x03EF */ std::uint8_t spa_rating;
+        /* 0x03F0 */ std::uint8_t spl_rating;
+        /* 0x03F1 */ std::uint8_t pad_03F1[1];
+        /* 0x03F2 */ std::uint8_t dpn_rating;
+        /* 0x03F3 */ std::uint8_t dph_rating;
+        /* 0x03F4 */ std::uint8_t dpa_rating;
+        /* 0x03F5 */ std::uint8_t dpl_rating;
+        /* 0x03F6 */ std::uint8_t pad_03F6[6];
+        /* 0x03FC */ std::uint32_t spb_bpm_max;
+        /* 0x0400 */ std::uint32_t spb_bpm_min;
+        /* 0x0404 */ std::uint32_t spn_bpm_max;
+        /* 0x0408 */ std::uint32_t spn_bpm_min;
+        /* 0x040C */ std::uint32_t sph_bpm_max;
+        /* 0x0410 */ std::uint32_t sph_bpm_min;
+        /* 0x0414 */ std::uint32_t spa_bpm_max;
+        /* 0x0418 */ std::uint32_t spa_bpm_min;
+        /* 0x041C */ std::uint32_t spl_bpm_max;
+        /* 0x0420 */ std::uint32_t spl_bpm_min;
+        /* 0x0424 */ std::uint8_t pad_0424[8];
+        /* 0x042C */ std::uint32_t dpn_bpm_max;
+        /* 0x0430 */ std::uint32_t dpn_bpm_min;
+        /* 0x0434 */ std::uint32_t dph_bpm_max;
+        /* 0x0438 */ std::uint32_t dph_bpm_min;
+        /* 0x043C */ std::uint32_t dpa_bpm_max;
+        /* 0x0440 */ std::uint32_t dpa_bpm_min;
+        /* 0x0444 */ std::uint32_t dpl_bpm_max;
+        /* 0x0448 */ std::uint32_t dpl_bpm_min;
+        /* 0x044C */ std::uint8_t pad_044C[48];
+        /* 0x047C */ std::uint32_t spb_note_count;
+        /* 0x0480 */ std::uint32_t spn_note_count;
+        /* 0x0484 */ std::uint32_t sph_note_count;
+        /* 0x0488 */ std::uint32_t spa_note_count;
+        /* 0x048C */ std::uint32_t spl_note_count;
+        /* 0x0490 */ std::uint8_t pad_0490[4];
+        /* 0x0494 */ std::uint32_t dpn_note_count;
+        /* 0x0498 */ std::uint32_t dph_note_count;
+        /* 0x049C */ std::uint32_t dpa_note_count;
+        /* 0x04A0 */ std::uint32_t dpl_note_count;
+	    /* 0x04A4 */ std::uint8_t pad_04A4[24];
+	    /* 0x04BC */ std::int32_t spb_cn_type;
+	    /* 0x04C0 */ std::int32_t spn_cn_type;
+	    /* 0x04C4 */ std::int32_t sph_cn_type;
+	    /* 0x04C8 */ std::int32_t spa_cn_type;
+	    /* 0x04CC */ std::int32_t spl_cn_type;
+	    /* 0x04D0 */ std::uint8_t pad_04D0[4];
+	    /* 0x04D4 */ std::int32_t dpn_cn_type;
+	    /* 0x04D8 */ std::int32_t dph_cn_type;
+	    /* 0x04DC */ std::int32_t dpa_cn_type;
+	    /* 0x04E0 */ std::int32_t dpl_cn_type;
+	    /* 0x04E4 */ std::uint8_t pad_04E4[24];
+		/* 0x04FC */ notes_radar_t spb_notes_radar;
+		/* 0x0514 */ notes_radar_t spn_notes_radar;
+		/* 0x052C */ notes_radar_t sph_notes_radar;
+		/* 0x0544 */ notes_radar_t spa_notes_radar;
+		/* 0x055C */ notes_radar_t spl_notes_radar;
+		/* 0x0574 */ std::uint8_t pad_0574[24];
+		/* 0x058C */ notes_radar_t dpn_notes_radar;
+		/* 0x05A4 */ notes_radar_t dph_notes_radar;
+		/* 0x05BC */ notes_radar_t dpa_notes_radar;
+		/* 0x05D4 */ notes_radar_t dpl_notes_radar;
+        /* 0x05EC */ char pad_05EC[144];
+        /* 0x067C */ std::int32_t id;
+        /* 0x0680 */ std::int32_t volume;
+        /* 0x0684 */ char pad_0684[372];
+    }; static_assert(sizeof(music_entry_t) == 0x7F8);
 
-	struct music_data_t
-	{
-		const char magic[4]; //0x0000 "IIDX"
-		std::int32_t game_version; //0x0004
-		std::int16_t occupied_entries; //0x0008
-		std::int16_t maximum_entries; //0x000A
-		std::uint8_t pad_000C[64004]; //0x000C
-		music_entry_t first; //0xFA10
-	}; static_assert(sizeof(music_data_t) == 0xFF3C);
+    struct music_data_t
+    {
+        /* 0x0000 */ const char magic[4]; // "IIDX"
+        /* 0x0004 */ std::int32_t version;
+        /* 0x0008 */ std::int16_t entries;
+        /* 0x000C */ std::int32_t occupied_entries;
+        /* 0x0010 */ std::int32_t indexes[1];
+    };
+    static_assert(offsetof(music_data_t, occupied_entries) == 0x0C);
+    static_assert(offsetof(music_data_t, indexes) == 0x10);
+
+    auto music_first(music_data_t* data) -> music_entry_t*;
 
 	struct state_t
 	{
@@ -261,6 +314,33 @@ namespace bm2dx
 		music_entry_t* active_music; //0x0030
 	}; static_assert(sizeof(state_t) == 0x38);
 
+	struct play_counters_t
+	{
+		std::int32_t ex_score; //0x0000
+		std::uint8_t pad_0004[8]; //0x0004
+		std::int32_t note_current; //0x000C
+		std::int32_t note_total; //0x0010
+		std::uint8_t pad_0014[852]; //0x0014
+	}; static_assert(sizeof(play_counters_t) == 0x368);
+
+	struct play_state_t
+	{
+		std::uint8_t pad_0000[16]; //0x0000
+		play_counters_t players[2]; //0x0010
+		std::uint8_t pad_06E0[876]; //0x06E0
+		std::uint32_t pacemaker_target; //0x0A4C
+	}; static_assert(sizeof(play_state_t) == 0xA50);
+
+	struct play_session_t
+	{
+		std::uint8_t pad_0000[0x54]; //0x0000
+		bool in_gameplay; //0x0054
+		std::uint8_t pad_0055[0x30F]; //0x0055
+		std::uint32_t current_score_pb; //0x0364
+		std::uint8_t pad_0368[0x28]; //0x0368
+		pacemaker_type pacemaker_type_id; //0x0390
+	}; static_assert(offsetof(play_session_t, pacemaker_type_id) == 0x390);
+
 	struct game_score_t
 	{
 		std::int32_t score[5]; //0x0000
@@ -270,17 +350,12 @@ namespace bm2dx
 		std::uint8_t pad_002E[2]; //0x002E
 	}; static_assert(sizeof(game_score_t) == 0x30);
 
-	struct player_scores_t
-	{
-		game_score_t sp[MAX_ENTRIES]; //0x0000
-		game_score_t dp[MAX_ENTRIES]; //0x177000
-	}; static_assert(sizeof(player_scores_t) == 0x2EE000);
+	auto max_entries() -> std::size_t;
+	auto player_scores_size() -> std::size_t;
+	auto rival_scores_size() -> std::size_t;
 
-    struct rival_scores_t
-    {
-		game_score_t sp[MAX_RIVALS][MAX_ENTRIES]; //0x0000
-		game_score_t dp[MAX_RIVALS][MAX_ENTRIES]; //0x8CA000
-    }; static_assert(sizeof(rival_scores_t) == 0x1194000);
+	auto player_score(int player, play_style style, std::uint32_t music_id) -> game_score_t*;
+	auto rival_score(int player, int rival, play_style style, std::uint32_t music_id) -> game_score_t*;
 
     struct timing_t
     {
@@ -329,10 +404,13 @@ namespace bm2dx
 	// global variables
 	extern CApplicationConfig* config;
 	extern state_t* state;
-	extern bool* in_gameplay;
+	extern InputManagerIIDX* input_manager;
+	extern play_state_t* play_state;
+	extern play_session_t* play_session;
+	extern dead_state_t* dead_state;
 	extern random_data_t* random_data;
-	extern player_scores_t* scores[2];
-	extern rival_scores_t* rival_scores[2];
+	extern game_score_t* scores[2];
+	extern game_score_t* rival_scores[2];
     extern play_field_t* play_field;
 	extern std::unordered_map<std::uint32_t, music_entry_t*> music_map;
 

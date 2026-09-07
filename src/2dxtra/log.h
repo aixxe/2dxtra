@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace iidxtra::log
 {

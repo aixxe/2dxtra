@@ -20,5 +20,5 @@ namespace iidxtra::judge_timing_hook
 	}
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->TIMING_HOOK_FN, set_timing_hook_fn, &original_set_timing_fn); }
+		{ MH_CreateHook(bm2dx::addr->TIMING_HOOK_FN, reinterpret_cast<LPVOID>(set_timing_hook_fn), &original_set_timing_fn); }
 }

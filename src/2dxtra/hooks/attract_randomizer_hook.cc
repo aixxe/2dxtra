@@ -16,8 +16,16 @@ namespace iidxtra::attract_randomizer_hook
 		return 0;
 	}
 
-	auto select_chart_fn(void*, std::uint32_t chart[2], int) -> std::uint32_t*
+	auto select_chart_fn(void* a1, std::uint32_t chart[2], int a3) -> std::uint32_t*
 	{
+		// music_data has not been walked yet during early boot; let the game
+		// pick in that case rather than indexing an empty map.
+		if (bm2dx::music_map.empty())
+		{
+			return reinterpret_cast<std::uint32_t* (*) (void*, std::uint32_t*, int)>
+				(original_select_chart_fn) (a1, chart, a3);
+		}
+
 		auto rng = std::default_random_engine { std::random_device {} () };
 		auto dist = std::uniform_int_distribution<std::size_t> { 0, bm2dx::music_map.size() - 1 };
 
@@ -31,5 +39,5 @@ namespace iidxtra::attract_randomizer_hook
 	}
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->ATTRACT_SELECT_FN, select_chart_fn, &original_select_chart_fn); }
+		{ MH_CreateHook(bm2dx::addr->ATTRACT_SELECT_FN, reinterpret_cast<LPVOID>(select_chart_fn), &original_select_chart_fn); }
 }

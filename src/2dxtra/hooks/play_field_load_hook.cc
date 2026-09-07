@@ -28,5 +28,5 @@ namespace iidxtra::play_field_load_hook
 	}
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->PLAY_FIELD_LOAD, play_field_load_hook_fn, &original_play_field_load_fn); }
+		{ MH_CreateHook(bm2dx::addr->PLAY_FIELD_LOAD, reinterpret_cast<LPVOID>(play_field_load_hook_fn), &original_play_field_load_fn); }
 }

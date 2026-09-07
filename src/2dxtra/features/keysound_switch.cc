@@ -1,8 +1,11 @@
+#include <algorithm>
 #include <random>
 #include "regular_speed.h"
 
 namespace iidxtra::keysound_switch
 {
+    using enum bm2dx::chart_event_type;
+
     auto override_type = 0;
     auto mute_bgm = false;
 
@@ -15,14 +18,14 @@ namespace iidxtra::keysound_switch
     auto remove_bgm_keysounds(std::vector<bm2dx::chart_event_t>& buffer) -> void
     {
         for (auto& event: buffer)
-            if (event.type == 7) // background note
+            if (event.type == BGM) // background note
                 event.value = 0;
     }
 
     auto remove_note_keysounds(std::vector<bm2dx::chart_event_t>& buffer) -> void
     {
         for (auto& event: buffer)
-            if (event.type == 2 || event.type == 3) // sample changes
+            if (event.type == SAMPLE_P1 || event.type == SAMPLE_P2) // sample changes
                 event.value = 0;
     }
 
@@ -32,8 +35,11 @@ namespace iidxtra::keysound_switch
         auto keysounds = std::vector<decltype(bm2dx::chart_event_t::value)> {};
 
         for (auto const& event: buffer)
-            if (event.type == 2 || event.type == 3)
+            if (event.type == SAMPLE_P1 || event.type == SAMPLE_P2)
                 keysounds.emplace_back(event.value);
+
+        if (keysounds.empty())
+            return;
 
         // now pick randomly
         auto rng = std::default_random_engine { std::random_device {} () };
@@ -43,7 +49,7 @@ namespace iidxtra::keysound_switch
 
         for (auto& event: buffer)
         {
-            if (event.type == 2 || event.type == 3)
+            if (event.type == SAMPLE_P1 || event.type == SAMPLE_P2)
             {
                 event.value = *it;
                 it = std::next(it);
@@ -57,8 +63,12 @@ namespace iidxtra::keysound_switch
         auto keysounds = std::vector<bm2dx::chart_event_t*> {};
 
         for (auto& event: buffer)
-            if (event.type == 2 || event.type == 3)
+            if (event.type == SAMPLE_P1 || event.type == SAMPLE_P2)
                 keysounds.emplace_back(&event);
+
+        // rotating needs a previous and a next entry to work with
+        if (keysounds.size() < 3)
+            return;
 
         // randomly select a variety of keysounds to modify
         auto rng = std::default_random_engine { std::random_device {} () };

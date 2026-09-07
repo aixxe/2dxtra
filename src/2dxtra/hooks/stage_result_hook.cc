@@ -19,6 +19,21 @@ namespace iidxtra::stage_result_hook
 		return &score_set::custom[chart_id];
 	}
 
+	// Copies the difficulty the player just finished out of the game's table
+	// and into the custom chart's score slot.
+	auto copy_result(score_set::score_t& target, const int player, const bm2dx::play_style style,
+	                 const std::uint32_t music_id, const int difficulty) -> void
+	{
+		auto const* const game_score = bm2dx::player_score(player, style, music_id);
+
+		if (game_score == nullptr || difficulty < 0 || difficulty >= 5)
+			return;
+
+		target.clear[player] = game_score->clear[difficulty];
+		target.miss[player] = game_score->miss[difficulty];
+		target.score[player] = game_score->score[difficulty];
+	}
+
 	auto stage_result_hook_fn(void* a1) -> std::uint8_t
 	{
 		auto result = reinterpret_cast<std::uint8_t (*) (void*)>(original_stage_result_hook)(a1);
@@ -26,10 +41,15 @@ namespace iidxtra::stage_result_hook
 		// The function we're hooking here is called AFTER the game has updated bm2dx::scores.
 		// Backup the entire score structure for scores set on default charts.
 		if (bm2dx::state->p1_active && chart_load_hook::last_chart_id_p1.empty())
-            CopyMemory(score_set::stock_p1, bm2dx::scores[0], sizeof(bm2dx::player_scores_t));
+            CopyMemory(score_set::stock_p1, bm2dx::scores[0], bm2dx::player_scores_size());
 
         if (bm2dx::state->p2_active && chart_load_hook::last_chart_id_p2.empty())
-            CopyMemory(score_set::stock_p2, bm2dx::scores[1], sizeof(bm2dx::player_scores_t));
+            CopyMemory(score_set::stock_p2, bm2dx::scores[1], bm2dx::player_scores_size());
+
+		if (bm2dx::state->active_music == nullptr)
+			return result;
+
+		auto const music_id = static_cast<std::uint32_t>(bm2dx::state->active_music->id);
 
 		auto score_p1 = get_custom_chart_score(chart_load_hook::last_chart_id_p1);
 		auto score_p2 = get_custom_chart_score(chart_load_hook::last_chart_id_p2);
@@ -37,42 +57,24 @@ namespace iidxtra::stage_result_hook
 		if (bm2dx::state->play_style == 0)
 		{
 			if (bm2dx::state->p1_active && score_p1)
-			{
-				auto& game_score = bm2dx::scores[0]->sp[bm2dx::state->active_music->id];
-
-				score_p1->clear[0] = game_score.clear[bm2dx::state->p1_difficulty];
-				score_p1->miss[0] = game_score.miss[bm2dx::state->p1_difficulty];
-				score_p1->score[0] = game_score.score[bm2dx::state->p1_difficulty];
-			}
+				copy_result(*score_p1, 0, bm2dx::play_style::SP, music_id, bm2dx::state->p1_difficulty);
 
 			if (bm2dx::state->p2_active && score_p2)
-			{
-				auto& game_score = bm2dx::scores[1]->sp[bm2dx::state->active_music->id];
-
-				score_p2->clear[1] = game_score.clear[bm2dx::state->p2_difficulty];
-				score_p2->miss[1] = game_score.miss[bm2dx::state->p2_difficulty];
-				score_p2->score[1] = game_score.score[bm2dx::state->p2_difficulty];
-			}
+				copy_result(*score_p2, 1, bm2dx::play_style::SP, music_id, bm2dx::state->p2_difficulty);
 		}
 		else
 		{
-			auto player_index = (bm2dx::state->p1_active ? 0: 1);
-			auto difficulty_index = (bm2dx::state->p1_active ? bm2dx::state->p1_difficulty: bm2dx::state->p2_difficulty);
+			auto const player_index = (bm2dx::state->p1_active ? 0: 1);
+			auto const difficulty_index = (bm2dx::state->p1_active
+				? bm2dx::state->p1_difficulty: bm2dx::state->p2_difficulty);
 
-			auto& game_score = bm2dx::scores[player_index]->dp[bm2dx::state->active_music->id];
-			auto& custom_score = (player_index == 0 ? score_p1: score_p2);
-
-			if (custom_score)
-			{
-				custom_score->clear[player_index] = game_score.clear[difficulty_index];
-				custom_score->miss[player_index] = game_score.miss[difficulty_index];
-				custom_score->score[player_index] = game_score.score[difficulty_index];
-			}
+			if (auto* const custom_score = (player_index == 0 ? score_p1: score_p2))
+				copy_result(*custom_score, player_index, bm2dx::play_style::DP, music_id, difficulty_index);
 		}
 
 		return result;
 	}
 
 	auto install_hook() -> void
-		{ MH_CreateHook(bm2dx::addr->STAGE_RESULT_FN, stage_result_hook_fn, &original_stage_result_hook); }
+		{ MH_CreateHook(bm2dx::addr->STAGE_RESULT_FN, reinterpret_cast<LPVOID>(stage_result_hook_fn), &original_stage_result_hook); }
 }

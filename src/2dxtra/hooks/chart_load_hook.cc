@@ -5,6 +5,7 @@
 #include "../chart_set.h"
 #include "../features/keysound_switch.h"
 #include "../features/regular_speed.h"
+#include "../features/chart_speed.h"
 #include "../features/chart_loader.h"
 #include "../features/scratch_swap.h"
 #include "../features/cn_transformer.h"
@@ -37,9 +38,12 @@ namespace iidxtra::chart_load_hook
 		if (!chart_set::active.empty())
 			chart_loader::load_custom_chart(output, chart_index);
 
-		// Make a copy of the current chart.
-		auto events = std::vector<bm2dx::chart_event_t>(0x3000);
-		CopyMemory(events.data(), output, sizeof(bm2dx::chart_event_t) * 0x3000);
+		// Work on a copy so a mutator can shorten the stream without having to
+		// preserve whatever the game already parsed. The buffer is kept around
+		// between loads; it is 96 KiB and every chart load needs exactly it.
+		auto static events = std::vector<bm2dx::chart_event_t> {};
+		events.resize(bm2dx::CHART_EVENT_CAPACITY);
+		CopyMemory(events.data(), output, bm2dx::CHART_BUFFER_BYTES);
 
 		{
 			// Mutators
@@ -47,10 +51,13 @@ namespace iidxtra::chart_load_hook
 			regular_speed::mutate(next_player_id, events);
 			scratch_swap::mutate(next_player_id, events);
 			cn_transformer::mutate(next_player_id, events);
+			chart_speed::mutate(next_player_id, events);
 		}
 
-		ZeroMemory(output, sizeof(bm2dx::chart_event_t) * 0x3000);
-		CopyMemory(output, events.data(), sizeof(bm2dx::chart_event_t) * 0x3000);
+		// A mutator that dropped events has to leave the tail zeroed rather
+		// than short, since the game reads the whole fixed-size buffer back.
+		events.resize(bm2dx::CHART_EVENT_CAPACITY);
+		CopyMemory(output, events.data(), bm2dx::CHART_BUFFER_BYTES);
 
 		return result;
 	}
@@ -98,7 +105,7 @@ namespace iidxtra::chart_load_hook
 
 	auto install_hook() -> void
 	{
-		MH_CreateHook(bm2dx::addr->LOAD_CHART_FN_A, chart_loader_outer_hook_fn, &original_outer_chart_loader_fn);
-		MH_CreateHook(bm2dx::addr->LOAD_CHART_FN_B, chart_loader_hook_fn, &original_chart_loader_fn);
+		MH_CreateHook(bm2dx::addr->LOAD_CHART_FN_A, reinterpret_cast<LPVOID>(chart_loader_outer_hook_fn), &original_outer_chart_loader_fn);
+		MH_CreateHook(bm2dx::addr->LOAD_CHART_FN_B, reinterpret_cast<LPVOID>(chart_loader_hook_fn), &original_chart_loader_fn);
 	}
 }

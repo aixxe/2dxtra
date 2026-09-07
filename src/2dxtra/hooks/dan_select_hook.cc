@@ -9,6 +9,9 @@ namespace iidxtra::dan_select_hook
 
 	auto dan_select_ctor_hook_fn(void* a1) -> void*
 	{
+		// Refresh the chart sets from the database.
+		chart_set::load_sets();
+
 		// Enable chart set switching.
         chart_set::switch_enabled = true;
 
@@ -16,5 +19,5 @@ namespace iidxtra::dan_select_hook
 	}
 
 	void install_hook()
-		{ MH_CreateHook(bm2dx::addr->DAN_SELECT_CTOR, dan_select_ctor_hook_fn, &original_dan_select_ctor_fn); }
+		{ MH_CreateHook(bm2dx::addr->DAN_SELECT_CTOR, reinterpret_cast<LPVOID>(dan_select_ctor_hook_fn), &original_dan_select_ctor_fn); }
 }

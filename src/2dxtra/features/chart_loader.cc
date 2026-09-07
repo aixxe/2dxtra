@@ -1,4 +1,3 @@
-#include <fstream>
 #include "../log.h"
 #include "../game.h"
 #include "../chart_set.h"
@@ -13,49 +12,29 @@ namespace iidxtra::chart_loader
 		auto const real_index = reinterpret_cast<std::int64_t (*) (void*, int)>
 			(bm2dx::addr->REMAP_INDEX_FN) (output, index);
 
-		// Try to get an override chart from the currently active chart set.
-		auto const entry_id = bm2dx::state->active_music->id;
-		auto const& active_set = chart_set::custom.at(chart_set::active);
+		// Pull the mutated chart from the database; the mutated hash doubles
+		// as the chart id.
+		auto const pulled = chart_set::pull_chart(
+			bm2dx::state->active_music->id, static_cast<int>(real_index),
+			static_cast<std::uint8_t*>(output), bm2dx::CHART_BUFFER_BYTES);
 
-		if (!active_set.music.contains(entry_id))
+		if (!pulled.has_value())
 			return false;
 
-		auto& active_music = active_set.music.at(entry_id);
+		// Save the chart ID for later use in stage_result_hook.
+		(chart_load_hook::next_player_id == 0 ?
+			chart_load_hook::last_chart_id_p1:
+			chart_load_hook::last_chart_id_p2) = pulled->hash;
 
-		if (!active_music.charts.contains(real_index))
-			return false;
+		auto const original_notes = chart_set::stock.music[bm2dx::state->active_music->id].charts[real_index].notes;
+		auto const replacement_notes = pulled->notes;
 
-		// Okay, we should have an override chart by now. We still need to load it though.
-		auto const& active_chart = active_music.charts.at(real_index);
-		auto file = std::ifstream { active_chart.path, std::ios::binary | std::ios::ate };
+		// If the note count changed, display the difference à la 2dxplus.
+        if (replacement_notes == original_notes)
+        	return true;
 
-		try
-		{
-			if (!file.good())
-				return false;
-
-			auto const size = file.tellg();
-
-			file.seekg(0, std::ios::beg);
-			file.read(static_cast<char*>(output), size);
-
-			// Save the chart ID for later use in stage_result_hook.
-			(chart_load_hook::next_player_id == 0 ?
-				chart_load_hook::last_chart_id_p1:
-				chart_load_hook::last_chart_id_p2) = active_chart.id;
-
-			auto& default_set = chart_set::stock;
-
-			auto const original_notes = default_set.music[entry_id].charts[real_index].notes;
-			auto const replacement_notes = active_chart.notes;
-
-			// If the note count changed, display the difference à la 2dxplus.
-            if (replacement_notes == original_notes)
-            	return true;
-
-		    log::print("[{}] P{}: {} + {} -> {} notes", chart_set::active, chart_load_hook::next_player_id + 1,
-                       original_notes, replacement_notes - original_notes, replacement_notes);
-		} catch (...) {}
+	    log::print("[{}] P{}: {} + {} -> {} notes", chart_set::active, chart_load_hook::next_player_id + 1,
+                   original_notes, replacement_notes - original_notes, replacement_notes);
 
 		return true;
 	}

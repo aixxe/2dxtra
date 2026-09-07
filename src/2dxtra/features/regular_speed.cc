@@ -3,6 +3,8 @@
 
 namespace iidxtra::regular_speed
 {
+	using enum bm2dx::chart_event_type;
+
 	auto enabled = false;
 
     auto reset() -> void
@@ -14,14 +16,14 @@ namespace iidxtra::regular_speed
 			return;
 
 		auto events = std::vector<bm2dx::chart_event_t>();
-		events.reserve(0x3000);
+		events.reserve(bm2dx::CHART_EVENT_CAPACITY);
 
 		auto skipped = 0;
 		auto saw_first = false;
 
 		for (auto const& event: buffer)
 		{
-			if (event.type == 4)
+			if (event.type == TEMPO)
 			{
 				if (!saw_first)
 				{
@@ -38,7 +40,7 @@ namespace iidxtra::regular_speed
 
 			events.emplace_back(event);
 
-			if (event.type == 6)
+			if (event.type == END_OF_SONG)
 				break;
 		}
 
@@ -47,6 +49,7 @@ namespace iidxtra::regular_speed
 
 		score_invalidator_hook::invalidate(player);
 
-		buffer = events;
+		events.resize(bm2dx::CHART_EVENT_CAPACITY);
+		buffer = std::move(events);
 	}
 }

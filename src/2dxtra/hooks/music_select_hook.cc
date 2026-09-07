@@ -12,6 +12,9 @@ namespace iidxtra::music_select_hook
 
 	auto music_select_ctor_hook_fn(void* a1, int a2) -> void*
 	{
+		// Refresh the chart sets from the database.
+		chart_set::load_sets();
+
 		// Load scores from the current chart set.
 		score_set::reload_all();
 
@@ -33,7 +36,7 @@ namespace iidxtra::music_select_hook
 
 	auto install_hook() -> void
 	{
-		MH_CreateHook(bm2dx::addr->MUSIC_SELECT_CTOR, music_select_ctor_hook_fn, &original_music_select_ctor_fn);
+		MH_CreateHook(bm2dx::addr->MUSIC_SELECT_CTOR, reinterpret_cast<LPVOID>(music_select_ctor_hook_fn), &original_music_select_ctor_fn);
         scene_dtor_mid_fn_hook = safetyhook::create_mid(bm2dx::addr->SCENE_DTOR, scene_dtor_hook_fn);
 	}
 }
