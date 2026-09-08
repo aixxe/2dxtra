@@ -6,8 +6,8 @@ include(cmake/GetGitRevisionDescription.cmake)
 
 get_git_head_revision(GIT_REFSPEC GIT_COMMIT_HASH)
 
-string(REPLACE "refs/heads/" "" GIT_BRANCH_NAME ${GIT_REFSPEC})
-string(SUBSTRING ${GIT_COMMIT_HASH} 0 8 GIT_COMMIT_HASH_SHORT)
+string(REPLACE "refs/heads/" "" GIT_BRANCH_NAME "${GIT_REFSPEC}")
+string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 GIT_COMMIT_HASH_SHORT)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
