@@ -76,14 +76,20 @@ namespace iidxtra::chart_speed
 
 	using get_sound_entry_fn = sound_entry_t* (*)(int);
 
-	// chart speed multiplier; 1.00 = stock behavior
+	// Current chart speed multiplier; 1.00 = stock behavior
 	float rate = 1.0f;
+
+	// Previously used multiplier by the user; used for the UI
+	float rate_previous = 1.0f;
 
 	// original function
 	void* original_audio_load_fn = nullptr;
 
 	auto reset() -> void
-		{ rate = 1.0f; }
+	{
+		rate = 1.0f;
+		rate_previous = 1.0f;
+	}
 
 	auto mutate(const std::uint8_t player, std::vector<bm2dx::chart_event_t>& buffer) -> void
 	{
