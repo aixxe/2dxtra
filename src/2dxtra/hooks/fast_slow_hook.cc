@@ -10,6 +10,7 @@
 #include "../game.h"
 #include "../judgment.h"
 #include "../features/fast_slow_display.h"
+#include "../features/timing_histogram.h"
 #include "fast_slow_hook.h"
 
 namespace iidxtra::fast_slow_hook
@@ -106,6 +107,8 @@ namespace iidxtra::fast_slow_hook
         int player = -1;
         bool scratch = false;
         timing_t timing;
+        bool histogram_sample = false;
+        float histogram_milliseconds = 0.0f;
     };
     thread_local auto pending = pending_judgment_t {};
 
@@ -199,7 +202,7 @@ namespace iidxtra::fast_slow_hook
             const auto& addresses = *bm2dx::addr;
 
             const auto options = get_options();
-            const bool capture_enabled = options.enabled();
+            const bool capture_enabled = options.enabled() || timing_histogram::is_recording();
             const bool valid_note = player >= 0 && player < 2 && lane >= 0 && lane < 8;
             const bool is_press = caller == addresses.JUDGE_PRESS_RETURN;
             const bool is_release = caller == addresses.JUDGE_RELEASE_RETURN;
@@ -222,13 +225,18 @@ namespace iidxtra::fast_slow_hook
                         grade == bm2dx::judge_grade::late_poor &&
                         read<std::uint8_t>(candidate.note, 24) == 0;
 
+                    const bool include_in_histogram = is_press &&
+                        grade >= bm2dx::judge_grade::early_good &&
+                        grade <= bm2dx::judge_grade::late_good;
                     pending =
                     {
                         player,
                         is_scratch,
                         prepare_timing(candidate.milliseconds,
                                        candidate.ticks,
-                                       excessive_poor, options)
+                                       excessive_poor, options),
+                        include_in_histogram,
+                        candidate.milliseconds
                     };
                 }
             }
@@ -252,6 +260,16 @@ namespace iidxtra::fast_slow_hook
     {
         const auto result = original_judge_display_fn(display, code, combo, scratch);
         const auto player = read<judge_display_hook_context_t>(display).player;
+
+        // Code 12 == keep displaying previous judge while charge note is held
+        if (pending.histogram_sample &&
+            pending.player == player &&
+            pending.scratch == scratch &&
+            code != bm2dx::judge_display_code::charge_hold)
+        {
+            pending.histogram_sample = false;
+            timing_histogram::record_note(player, scratch, pending.histogram_milliseconds, code);
+        }
 
         const auto lock = std::lock_guard { state_mutex };
         auto timing = timing_t {};

@@ -18,6 +18,7 @@
 #include "../features/keysound_switch.h"
 #include "../features/play_visuals.h"
 #include "../features/fast_slow_display.h"
+#include "../features/timing_histogram.h"
 #include "../hooks/fast_slow_hook.h"
 
 namespace iidxtra::gui::main_window
@@ -382,6 +383,21 @@ namespace iidxtra::gui::main_window
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f},
                                            "Requires 120Hz");
                     }
+                }
+
+                if (ImGui::CollapsingHeader("Result Screen", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                    {
+                        ImGui::BeginDisabled(!fast_slow_hook::available() || bm2dx::play_session->in_gameplay);
+                        ImGui::Text("Timing Histogram");
+                        ImGui::SameLine(300);
+                        if (ImGui::Checkbox("##TimingHistogram", &timing_histogram::enabled))
+                            timing_histogram::update();
+                        ImGui::EndDisabled();
+                    }
+                    ImGui::PopStyleVar();
+                    ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Show timing distribution");
                 }
 
                 ImGui::EndTabItem();

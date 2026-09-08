@@ -1,6 +1,7 @@
 #include <MinHook.h>
 #include "../chart_set.h"
 #include "../score_set.h"
+#include "../features/timing_histogram.h"
 #include "chart_load_hook.h"
 #include "stage_result_hook.h"
 
@@ -37,6 +38,8 @@ namespace iidxtra::stage_result_hook
 	auto stage_result_hook_fn(void* a1) -> std::uint8_t
 	{
 		auto result = reinterpret_cast<std::uint8_t (*) (void*)>(original_stage_result_hook)(a1);
+
+        timing_histogram::stop_record();
 
 		// The function we're hooking here is called AFTER the game has updated bm2dx::scores.
 		// Backup the entire score structure for scores set on default charts.
