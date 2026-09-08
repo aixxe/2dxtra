@@ -1,6 +1,8 @@
 #include <meta.h>
 #include <cmath>
+#include <algorithm>
 #include <string>
+#include <fmt/format.h>
 #include "gui.h"
 #include "loader.h"
 #include "main_window.h"
@@ -18,6 +20,24 @@
 
 namespace iidxtra::gui::main_window
 {
+
+    static auto normalize_rate(float rate) -> float
+    {
+        const auto rounded = std::round(rate * 20.0f) / 20.0f;
+        return std::clamp(rounded, chart_speed::rate_min, chart_speed::rate_max);
+    }
+
+    static auto modify_rate(float rate, bool add) -> float
+    {
+        // Snap to the next 0.05 increment in the pressed direction, even between increments.
+        // Round down and increment, or round up and decrement.
+        const auto scaled = rate * 20.0f;
+        const auto modified = add ?
+            std::floor(scaled) + 1.0f :
+            std::ceil(scaled) - 1.0f;
+        return normalize_rate(modified / 20.0f);
+    }
+
     auto render() -> void
     {
 		// darken game
@@ -158,9 +178,58 @@ namespace iidxtra::gui::main_window
                             ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
                             ImGui::SameLine(300);
                             ImGui::BeginDisabled(!chart_set::switch_enabled);
+
+                            // Slider
                             ImGui::SetNextItemWidth(100);
-                            if (ImGui::SliderFloat("##ChartSpeed", &chart_speed::rate, 0.50f, 3.00f, "x%.2f"))
-                                chart_speed::rate = std::round(chart_speed::rate * 20.0f) / 20.0f;
+                            if (ImGui::SliderFloat("##ChartSpeed",
+                                &chart_speed::rate, chart_speed::rate_min, chart_speed::rate_max, "x%.2f"))
+                            {
+                                chart_speed::rate = normalize_rate(chart_speed::rate);
+                                chart_speed::rate_previous = chart_speed::rate;
+                            }
+
+                            // Decrease
+                            const auto button_size = ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight());
+                            ImGui::BeginDisabled(chart_speed::rate <= chart_speed::rate_min);
+                            ImGui::SameLine(0, 5.0f);
+                            if (ImGui::Button("-##ChartSpeedDown", button_size))
+                            {
+                                chart_speed::rate = modify_rate(chart_speed::rate, false);
+                                chart_speed::rate_previous = chart_speed::rate;
+                            }
+                            ImGui::EndDisabled();
+
+                            // Increase
+                            ImGui::BeginDisabled(chart_speed::rate >= chart_speed::rate_max);
+                            ImGui::SameLine(0, 5.0f);
+                            if (ImGui::Button("+##ChartSpeedUp", button_size))
+                            {
+                                chart_speed::rate = modify_rate(chart_speed::rate, true);
+                                chart_speed::rate_previous = chart_speed::rate;
+                            }
+                            ImGui::EndDisabled();
+
+                            // Toggle buttons
+                            if (chart_speed::rate == 1.0f)
+                            {
+                                if (chart_speed::rate_previous != 1.0f)
+                                {
+                                    const auto label = fmt::format("x{:.2f}##ChartSpeedRestore", chart_speed::rate_previous);
+                                    ImGui::SameLine(0, 5.0f);
+                                    if (ImGui::Button(label.c_str()))
+                                        chart_speed::rate = chart_speed::rate_previous;
+                                }
+                            }
+                            else
+                            {
+                                ImGui::SameLine(0, 5.0f);
+                                if (ImGui::Button("x1.00##ChartSpeedReset"))
+                                {
+                                    chart_speed::rate_previous = chart_speed::rate;
+                                    chart_speed::rate = 1.0f;
+                                }
+                            }
+
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
