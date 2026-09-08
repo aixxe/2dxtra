@@ -20,6 +20,7 @@
 #include "hooks/card_out_hook.h"
 #include "hooks/play_field_load_hook.h"
 #include "hooks/judge_timing_hook.h"
+#include "hooks/fast_slow_hook.h"
 #include "hooks/attract_randomizer_hook.h"
 #include "features/autoplay.h"
 #include "features/unrandomizer.h"
@@ -65,6 +66,7 @@ namespace iidxtra
         autoretry::install_hook();
         play_field_load_hook::install_hook();
         judge_timing_hook::install_hook();
+		fast_slow_hook::install_hook();
 		autoplay::install_hook();
 		unrandomizer::install_hook();
 		attract_randomizer_hook::install_hook();

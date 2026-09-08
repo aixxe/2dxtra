@@ -69,6 +69,7 @@ set(SOURCE_FILES
     src/2dxtra/hooks/card_out_hook.cc
     src/2dxtra/hooks/play_field_load_hook.cc
     src/2dxtra/hooks/judge_timing_hook.cc
+    src/2dxtra/hooks/fast_slow_hook.cc
     src/2dxtra/hooks/attract_randomizer_hook.cc
     src/2dxtra/features/cn_transformer.cc
     src/2dxtra/features/keysound_switch.cc
@@ -81,6 +82,7 @@ set(SOURCE_FILES
     src/2dxtra/features/scratch_swap.cc
     src/2dxtra/features/play_visuals.cc
     src/2dxtra/features/timing_modifier.cc
+    src/2dxtra/features/fast_slow_display.cc
     src/2dxtra/features/autoretry.cc
     res/2dxtra.def
     res/2dxtra.rc

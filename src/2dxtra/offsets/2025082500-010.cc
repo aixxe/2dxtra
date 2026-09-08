@@ -64,6 +64,16 @@ versions.push_back({
     .TIMING_HOOK_FN           = base + 0x082e340, // jump-table dispatcher that installs the judge windows
     .ATTRACT_SELECT_FN        = base + 0x08b1610, // picks the next attract demo chart
 
+    .GET_PLAY_OPTIONS_FN      = base + 0x0897300, // returns player options
+    .SPRITE_DRAW_FN           = base + 0x033cf60, // creates a named sprite at its native position and layer
+    .JUDGE_APPLY_FN           = base + 0x082dcd0, // applies a note judgment; used to obtain ms timing info
+    .JUDGE_DISPLAY_FN         = base + 0x09291d0, // updates judge, combo, fast/slow to be drawn
+    .JUDGE_DRAW_FS_KEYS_FN    = base + 0x0928910, // draws FAST/SLOW indicator for keys (or both if combined)
+    .JUDGE_DRAW_FS_SC_FN      = base + 0x0928c00, // draws the separate scratch FAST/SLOW indicator
+    .JUDGE_DISPLAY_INIT_FN    = base + 0x0928f70, // initialises one player's judgment display state
+    .JUDGE_PRESS_RETURN       = base + 0x082e947, // return address of general timing calculation
+    .JUDGE_RELEASE_RETURN     = base + 0x082d8aa, // return address of CN release timing calculation
+
     // offsets: data
     .GAME_MODEL               = base + 0x1076270, // the mutable copy of the ea3 model string
     .GAME_STATE               = base + 0xa9fa900, // state block; p1_active/p2_active at +0x10/+0x14 pin it down
