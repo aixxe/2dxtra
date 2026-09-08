@@ -3,6 +3,7 @@
 #include "../game.h"
 #include "../chart_set.h"
 #include "../score_set.h"
+#include "../features/timing_histogram.h"
 #include "music_select_hook.h"
 
 namespace iidxtra::music_select_hook
@@ -26,6 +27,8 @@ namespace iidxtra::music_select_hook
 
     auto scene_dtor_hook_fn(SafetyHookContext&) -> void
     {
+		timing_histogram::leave_result();
+
 		// Chart switching was enabled when entering a music select scene.
         // It should be disabled as soon as the scene is changed to anything else.
         if (!chart_set::switch_enabled)

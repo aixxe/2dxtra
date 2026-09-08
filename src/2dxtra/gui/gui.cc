@@ -4,6 +4,7 @@
 #include "gui.h"
 #include "log_window.h"
 #include "main_window.h"
+#include "timing_histogram_window.h"
 #include "../input.h"
 #include "../hooks/renderer_hook.h"
 
@@ -135,6 +136,7 @@ namespace iidxtra::gui
 
     auto render() -> void
     {
+		timing_histogram_window::render();
 		log_window::render();
 
 		if (visible)

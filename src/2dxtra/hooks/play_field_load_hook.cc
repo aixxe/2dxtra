@@ -2,6 +2,7 @@
 #include "../log.h"
 #include "../game.h"
 #include "../features/cn_override.h"
+#include "../features/timing_histogram.h"
 #include "play_field_load_hook.h"
 
 namespace iidxtra::play_field_load_hook
@@ -15,6 +16,9 @@ namespace iidxtra::play_field_load_hook
 
         // Update the play field pointer.
         bm2dx::play_field = play_field;
+
+        // A new play field also starts a new attempt after a quick retry.
+        timing_histogram::begin_record(bm2dx::state->play_style != 0);
 
 		// Set the initial CN states.
         if (bm2dx::state->p1_active || bm2dx::state->play_style == 1) cn_override::set_initial_states(0);

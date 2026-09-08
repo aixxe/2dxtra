@@ -52,6 +52,7 @@ set(SOURCE_FILES
     src/2dxtra/gui/cn_transformer_window.cc
     src/2dxtra/gui/timing_modifier_window.cc
     src/2dxtra/gui/autoretry_window.cc
+    src/2dxtra/gui/timing_histogram_window.cc
     src/2dxtra/hooks/mdata_load_hook.cc
     src/2dxtra/hooks/boot_screen_hook.cc
     src/2dxtra/hooks/chart_load_hook.cc
@@ -83,6 +84,7 @@ set(SOURCE_FILES
     src/2dxtra/features/play_visuals.cc
     src/2dxtra/features/timing_modifier.cc
     src/2dxtra/features/fast_slow_display.cc
+    src/2dxtra/features/timing_histogram.cc
     src/2dxtra/features/autoretry.cc
     res/2dxtra.def
     res/2dxtra.rc
