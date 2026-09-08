@@ -72,6 +72,15 @@ struct offsets
     std::uint8_t* WNDPROC_FN;             // "PropClassWindowProc" for the game window
     std::uint8_t* TIMING_HOOK_FN;         // last chance to change the judge windows before play
     std::uint8_t* ATTRACT_SELECT_FN;      // picks the next attract demo chart
+    std::uint8_t* GET_PLAY_OPTIONS_FN;    // returns player options
+    std::uint8_t* SPRITE_DRAW_FN;         // creates a named sprite at its native position and layer
+    std::uint8_t* JUDGE_APPLY_FN;         // applies a note judgment; used to obtain ms timing info
+    std::uint8_t* JUDGE_DISPLAY_FN;       // updates judge, combo, fast/slow to be drawn
+    std::uint8_t* JUDGE_DRAW_FS_KEYS_FN;  // draws FAST/SLOW indicator for keys (or both if combined)
+    std::uint8_t* JUDGE_DRAW_FS_SC_FN;    // draws the separate scratch FAST/SLOW indicator
+    std::uint8_t* JUDGE_DISPLAY_INIT_FN;  // initialises one player's judgment display state
+    std::uint8_t* JUDGE_PRESS_RETURN;     // return address of general timing calculation
+    std::uint8_t* JUDGE_RELEASE_RETURN;   // return address of CN release timing calculation
 
     // offsets: variables
     std::uint8_t* GAME_MODEL;             // the mutable ea3 model string ("***:*:*:*:**********")

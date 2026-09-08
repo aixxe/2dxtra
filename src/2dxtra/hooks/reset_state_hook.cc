@@ -18,6 +18,7 @@
 #include "../features/autoretry.h"
 #include "reset_state_hook.h"
 #include "score_invalidator_hook.h"
+#include "../features/fast_slow_display.h"
 
 namespace iidxtra::reset_state_hook
 {
@@ -55,6 +56,7 @@ namespace iidxtra::reset_state_hook
             cn_transformer::reset();
             play_visuals::reset();
             timing_modifier::reset();
+            fast_slow_display::reset();
             autoretry::reset();
         }
 

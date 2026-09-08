@@ -147,11 +147,14 @@ namespace bm2dx
     {
         std::uint8_t pad_0000[64]; //0x0000
 		std::int32_t spacing; //0x0040
-		std::uint8_t pad_0044[12]; //0x0044
-		std::int32_t h_align; //0x0050
-        std::int32_t v_align; //0x0054
-        std::uint8_t pad_0058[256]; //0x0058 (extra space for text)
+		std::uint8_t pad_0044[16]; //0x0044
+		std::int32_t h_align; //0x0054
+        std::int32_t v_align; //0x0058
+        std::uint8_t pad_005c[252]; //0x005C (extra space for text)
     };
+    static_assert(offsetof(text_props_t, h_align) == 0x54);
+    static_assert(offsetof(text_props_t, v_align) == 0x58);
+    static_assert(sizeof(text_props_t) == 0x158);
 
 	struct random_data_t
 	{
