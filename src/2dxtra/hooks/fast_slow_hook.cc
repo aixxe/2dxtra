@@ -30,11 +30,14 @@ namespace iidxtra::fast_slow_hook
     {
         // timing value in milliseconds
         float milliseconds;
-        std::byte reserved_04[4];
+        // Tick value for judge; negative is early, positive is late
+        // with default timing windows, PGREATS are [0, 1] on 60Hz LDJ, [-1, 2] on TDJ
+        std::int32_t ticks;
         // pointer to in-game note; used to check if judgement is valid (has note)
         void* note;
     };
     static_assert(sizeof(judge_apply_hook_context_t) == 16);
+    static_assert(offsetof(judge_apply_hook_context_t, ticks) == 4);
     static_assert(offsetof(judge_apply_hook_context_t, note) == 8);
 
     // context object passed to judge_display_hook_fn.
@@ -173,7 +176,8 @@ namespace iidxtra::fast_slow_hook
         {
             const auto& addresses = *bm2dx::addr;
 
-            const bool capture_enabled = is_enabled();
+            const auto mode = get_mode();
+            const bool capture_enabled = mode != fast_slow_display::mode_t::off;
             const bool valid_note = player >= 0 && player < 2 && lane >= 0 && lane < 8;
             const bool is_press = caller == addresses.JUDGE_PRESS_RETURN;
             const bool is_release = caller == addresses.JUDGE_RELEASE_RETURN;
@@ -196,11 +200,24 @@ namespace iidxtra::fast_slow_hook
                         grade == bm2dx::judge_grade::late_poor &&
                         read<std::uint8_t>(candidate.note, 24) == 0;
 
+                    // For Shifted mode, calculate "symmetric" timing value by shifting by half a tick
+                    // We compare the ms value to the tick value to accurately determine tick rate
+                    auto timing = timing_t { candidate.milliseconds, excessive_poor };
+                    if (mode == fast_slow_display::mode_t::great_and_below_shifted &&
+                        !excessive_poor && candidate.ticks != 0 &&
+                        timing.get_polarity() != polarity::zero)
+                    {
+                        const auto half_tick_ms = candidate.milliseconds /
+                            static_cast<float>(candidate.ticks) * 0.5f;
+                        if (half_tick_ms > 0.0f)
+                            timing.milliseconds -= half_tick_ms;
+                    }
+
                     pending =
                     {
                         player,
                         is_scratch,
-                        { candidate.milliseconds, excessive_poor }
+                        timing
                     };
                 }
             }
@@ -265,7 +282,8 @@ namespace iidxtra::fast_slow_hook
                     displayed_code = &local_display.key_code;
 
                 const auto code = *displayed_code;
-                if (mode == fast_slow_display::mode_t::great_and_below &&
+                 if ((mode == fast_slow_display::mode_t::great_and_below ||
+                     mode == fast_slow_display::mode_t::great_and_below_shifted) &&
                     code == bm2dx::judge_display_code::pgreat)
                 {
                     rendering = saved_rendering;

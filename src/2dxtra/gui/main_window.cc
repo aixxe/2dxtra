@@ -344,7 +344,8 @@ namespace iidxtra::gui::main_window
                     {
                         auto const options = std::vector<std::tuple<std::string, std::string>> {
                             {"Off", "Use regular FAST/SLOW sprites"},
-                            {"<PGREAT", "Show ms for GREAT and below"},
+                            {"<PGREAT", "Show ms for GREAT & below"},
+                            {"<PGREAT+", "GREAT & below, shifted to be symmetric"},
                             {"Always", "Show ms for all judgments except 0.0ms"},
                         };
                         int mode = static_cast<int>(fast_slow_display::mode);
@@ -355,7 +356,7 @@ namespace iidxtra::gui::main_window
                             ImGui::Text("FAST/SLOW ms");
                             ImGui::SameLine(300);
                             ImGui::SetNextItemWidth(100);
-                            if (ImGui::SliderInt("##MillisecondFastSlow", &mode, 0, 2,
+                            if (ImGui::SliderInt("##MillisecondFastSlow", &mode, 0, 3,
                                                  mode_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
                             {
                                 fast_slow_display::mode = static_cast<fast_slow_display::mode_t>(mode);

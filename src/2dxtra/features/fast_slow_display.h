@@ -5,7 +5,12 @@
 
 namespace iidxtra::fast_slow_display
 {
-    enum class mode_t { off, great_and_below, always };
+    enum class mode_t {
+        off,
+        great_and_below,
+        great_and_below_shifted,
+        always
+    };
 
     extern mode_t mode;
 
