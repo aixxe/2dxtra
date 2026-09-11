@@ -344,8 +344,8 @@ namespace iidxtra::gui::main_window
                     {
                         auto const options = std::vector<std::tuple<std::string, std::string>> {
                             {"Off", "Use regular FAST/SLOW sprites"},
-                            {"<PGREAT", "Show milliseconds for GREAT and below"},
-                            {"Always", "Show milliseconds for all judgments except 0.0ms"},
+                            {"<PGREAT", "Show ms for GREAT and below"},
+                            {"Always", "Show ms for all judgments except 0.0ms"},
                         };
                         int mode = static_cast<int>(fast_slow_display::mode);
                         auto const& [mode_text, descriptive_text] = options[mode];
