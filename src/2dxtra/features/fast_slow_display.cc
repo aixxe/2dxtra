@@ -1,20 +1,21 @@
 #include <fmt/format.h>
 #include <cmath>
 #include "../hooks/fast_slow_hook.h"
+#include "../judgment.h"
 #include "fast_slow_display.h"
 
 namespace iidxtra::fast_slow_display
 {
-    auto enabled = false;
+    auto mode = mode_t::off;
 
     auto update() -> void
     {
-        fast_slow_hook::set_enabled(enabled);
+        fast_slow_hook::set_mode(mode);
     }
 
     auto reset() -> void
     {
-        enabled = false;
+        mode = mode_t::off;
         update();
     }
 
@@ -81,7 +82,7 @@ namespace iidxtra::fast_slow_display
         }
 
         // hold for charge note
-        if (code == 12) {
+        if (code == bm2dx::judge_display_code::charge_hold) {
             return;
         }
 

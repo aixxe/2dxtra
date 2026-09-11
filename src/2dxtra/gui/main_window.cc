@@ -342,17 +342,29 @@ namespace iidxtra::gui::main_window
                     }
 
                     {
+                        auto const options = std::vector<std::tuple<std::string, std::string>> {
+                            {"Off", "Use regular FAST/SLOW sprites"},
+                            {"<PGREAT", "Show milliseconds for GREAT and below"},
+                            {"Always", "Show milliseconds for all judgments except 0.0ms"},
+                        };
+                        int mode = static_cast<int>(fast_slow_display::mode);
+                        auto const& [mode_text, descriptive_text] = options[mode];
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::BeginDisabled(!fast_slow_hook::available() || bm2dx::play_session->in_gameplay);
                             ImGui::Text("FAST/SLOW ms");
                             ImGui::SameLine(300);
-                            if (ImGui::Checkbox("##MillisecondFastSlow", &fast_slow_display::enabled))
+                            ImGui::SetNextItemWidth(100);
+                            if (ImGui::SliderInt("##MillisecondFastSlow", &mode, 0, 2,
+                                                 mode_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
+                            {
+                                fast_slow_display::mode = static_cast<fast_slow_display::mode_t>(mode);
                                 fast_slow_display::update();
+                            }
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Replace FAST/SLOW with millisecond values");
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "%s", descriptive_text.c_str());
                     }
                 }
 

@@ -5,7 +5,9 @@
 
 namespace iidxtra::fast_slow_display
 {
-    extern bool enabled;
+    enum class mode_t { off, great_and_below, always };
+
+    extern mode_t mode;
 
     auto update() -> void;
     auto reset() -> void;
@@ -15,6 +17,7 @@ namespace iidxtra::fast_slow_display
     struct timing_t
     {
         float milliseconds = 0.0f;
+        bool excessive_poor = false;
 
         auto get_polarity() const -> polarity;
     };

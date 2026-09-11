@@ -7,6 +7,7 @@
 #include <intrin.h>
 #endif
 #include "../game.h"
+#include "../judgment.h"
 #include "../features/fast_slow_display.h"
 #include "fast_slow_hook.h"
 
@@ -86,13 +87,18 @@ namespace iidxtra::fast_slow_hook
     // Shared timing and enable state are accessed from both game hooks and the menu.
     auto state_mutex = std::mutex {};
     auto cache = fast_slow_display::display_cache_t {};
-    auto display_enabled = false;
+    auto display_mode = fast_slow_display::mode_t::off;
     auto installed = false;
+
+    auto get_mode() -> fast_slow_display::mode_t
+    {
+        const auto lock = std::lock_guard { state_mutex };
+        return display_mode;
+    }
 
     auto is_enabled() -> bool
     {
-        const auto lock = std::lock_guard { state_mutex };
-        return display_enabled;
+        return get_mode() != fast_slow_display::mode_t::off;
     }
 
     // Stores the pending judgment for next draw call.
@@ -109,7 +115,7 @@ namespace iidxtra::fast_slow_hook
     {
         timing_t timing;
         std::array<char, 7> text {};
-        bool miss = false;
+        bool word_label = false;
     };
     thread_local auto rendering = render_context_t {};
 
@@ -167,17 +173,36 @@ namespace iidxtra::fast_slow_hook
         {
             const auto& addresses = *bm2dx::addr;
 
-            if (is_enabled() &&
-                player >= 0 && player < 2 &&
-                lane >= 0 && lane < 8 &&
-                grade >= 0 && grade <= 8 &&
-                (caller == addresses.JUDGE_PRESS_RETURN || caller == addresses.JUDGE_RELEASE_RETURN))
+            const bool capture_enabled = is_enabled();
+            const bool valid_note = player >= 0 && player < 2 && lane >= 0 && lane < 8;
+            const bool is_press = caller == addresses.JUDGE_PRESS_RETURN;
+            const bool is_release = caller == addresses.JUDGE_RELEASE_RETURN;
+
+            if (capture_enabled && valid_note && (is_press || is_release))
             {
                 // read the candidate judgment context for this lane and player
                 const auto candidate = read<judge_apply_hook_context_t>(
                     context, sizeof(judge_apply_hook_context_t) * (lane + 8 * player));
                 if (candidate.note)
-                    pending = { player, lane == 7, { candidate.milliseconds } };
+                {
+                    const bool is_scratch = lane == 7;
+
+                    // note+24 is a flag that tells us if the note has not been judged
+                    // if it was already judged (0) then this is an excessive poor
+                    // the game engine would normally display SLOW for this and generate +250ms
+                    // as a placeholder but showing that ms value would be misleading; therefore
+                    // we do a special case for this (show "poor")
+                    const bool excessive_poor = is_press &&
+                        grade == bm2dx::judge_grade::late_poor &&
+                        read<std::uint8_t>(candidate.note, 24) == 0;
+
+                    pending =
+                    {
+                        player,
+                        is_scratch,
+                        { candidate.milliseconds, excessive_poor }
+                    };
+                }
             }
 
             // call into the original judgment apply function
@@ -202,7 +227,8 @@ namespace iidxtra::fast_slow_hook
 
         const auto lock = std::lock_guard { state_mutex };
         auto timing = timing_t {};
-        if (display_enabled && pending.player == player && pending.scratch == scratch)
+        if (display_mode != fast_slow_display::mode_t::off &&
+            pending.player == player && pending.scratch == scratch)
             timing = pending.timing;
 
         cache.update(player, reinterpret_cast<std::uintptr_t>(display), code, scratch, timing);
@@ -219,7 +245,8 @@ namespace iidxtra::fast_slow_hook
         try
         {
             // if the feature is disabled, call the original
-            if (!is_enabled())
+            const auto mode = get_mode();
+            if (mode == fast_slow_display::mode_t::off)
             {
                 original(display);
                 rendering = saved_rendering;
@@ -238,16 +265,29 @@ namespace iidxtra::fast_slow_hook
                     displayed_code = &local_display.key_code;
 
                 const auto code = *displayed_code;
+                if (mode == fast_slow_display::mode_t::great_and_below &&
+                    code == bm2dx::judge_display_code::pgreat)
+                {
+                    rendering = saved_rendering;
+                    return;
+                }
+
                 {
                     const auto lock = std::lock_guard { state_mutex };
                     rendering.timing = cache.get(local_display.player, reinterpret_cast<std::uintptr_t>(display),
                                                  separate, scratch);
                 }
 
-                if (code == 8)
+                if (code == bm2dx::judge_display_code::miss && rendering.timing.excessive_poor)
                 {
-                    // For complete misses, display 'miss'.
-                    rendering.miss = true;
+                    rendering.word_label = true;
+                    rendering.text = { 'p', 'o', 'o', 'r', '\0' };
+                }
+                else if (code == bm2dx::judge_display_code::miss &&
+                    rendering.timing.get_polarity() == polarity::zero)
+                {
+                    // For misses without measured timing, display 'miss'.
+                    rendering.word_label = true;
                     rendering.timing = {};
                     rendering.text = { 'm', 'i', 's', 's', '\0' };
                 }
@@ -257,12 +297,13 @@ namespace iidxtra::fast_slow_hook
                     rendering.text = fast_slow_display::format_fastslow_ms(rendering.timing.milliseconds);
                 }
 
-                if (code == 4 && rendering.text[0] != '\0')
+                if (code == bm2dx::judge_display_code::pgreat && rendering.text[0] != '\0')
                 {
                     // Code 4 (PGREAT) normally emits no FAST/SLOW sprite for us to replace.
                     // Change only our copy to code 3 (FAST) or 5 (SLOW), making the native draw
                     // function emit that sprite while leaving the game's real PGREAT untouched.
-                    *displayed_code = rendering.timing.get_polarity() == polarity::slow ? 5 : 3;
+                    *displayed_code = rendering.timing.get_polarity() == polarity::slow ?
+                        bm2dx::judge_display_code::late_great : bm2dx::judge_display_code::early_great;
                     pgreat = true;
                 }
             }
@@ -317,7 +358,7 @@ namespace iidxtra::fast_slow_hook
 
     auto draw_text(int horizontal, int vertical, const unsigned int layer, const char* text,
                    const int width, const int height, const bool fast, const bool scratch,
-                   const bool miss) -> void
+                   const bool word_label) -> void
     {
         // Font 3 is DFG Heisei Gothic W7 at 16 pixels, also used by bottom text like FREE PLAY.
         constexpr auto font = 3;
@@ -339,7 +380,7 @@ namespace iidxtra::fast_slow_hook
         init_text(&properties);
 
         auto content = std::string {};
-        if (miss)
+        if (word_label)
         {
             // Center the whole word in the sprite area, with all letters on a shared baseline.
             properties.h_align = 1;
@@ -408,7 +449,7 @@ namespace iidxtra::fast_slow_hook
         auto height = 0;
         get_dimensions(sprite, &width, &height);
         draw_text(horizontal, vertical, layer, rendering.text.data(), width, height,
-                  rendering.timing.get_polarity() == polarity::fast, asset.starts_with("s_"), rendering.miss);
+                  rendering.timing.get_polarity() == polarity::fast, asset.starts_with("s_"), rendering.word_label);
 
         return sprite;
     }
@@ -420,10 +461,10 @@ namespace iidxtra::fast_slow_hook
         return installed;
     }
 
-    auto set_enabled(const bool value) -> void
+    auto set_mode(const fast_slow_display::mode_t value) -> void
     {
         const auto lock = std::lock_guard { state_mutex };
-        display_enabled = installed && value;
+        display_mode = installed ? value : fast_slow_display::mode_t::off;
         cache = {};
     }
 
