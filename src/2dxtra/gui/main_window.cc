@@ -340,19 +340,47 @@ namespace iidxtra::gui::main_window
                         ImGui::PopStyleVar();
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Hide the flashing blue bar above the keys");
                     }
+                }
+
+                if (ImGui::CollapsingHeader("Timing", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ImGui::BeginDisabled();
+                    ImGui::TextWrapped("These options only affect FAST/SLOW indicators "
+                                       "and do not affect acutal timing or scoring");
+                    ImGui::EndDisabled();
 
                     {
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
-                            ImGui::BeginDisabled(!fast_slow_hook::available() || bm2dx::play_session->in_gameplay);
-                            ImGui::Text("FAST/SLOW ms");
+                            ImGui::Text("Show Milliseconds");
                             ImGui::SameLine(300);
-                            if (ImGui::Checkbox("##MillisecondFastSlow", &fast_slow_display::enabled))
+                            ImGui::BeginDisabled(!fast_slow_hook::available() ||
+                                                 bm2dx::play_session->in_gameplay);
+                            if (ImGui::Checkbox("##FastSlowMilliseconds",
+                                                &fast_slow_display::options.show_milliseconds))
                                 fast_slow_display::update();
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Replace FAST/SLOW with millisecond values");
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f},
+                                           "Show ms value instead of FAST/SLOW");
+                    }
+
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Show FAST/SLOW for PGREAT");
+                            ImGui::SameLine(300);
+                            ImGui::BeginDisabled(!fast_slow_hook::available() ||
+                                                 bm2dx::play_session->in_gameplay);
+                            if (ImGui::Checkbox("##FastSlowPGREAT",
+                                                &fast_slow_display::options.show_pgreat))
+                                fast_slow_display::update();
+                            ImGui::EndDisabled();
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f},
+                                           "Requires 120Hz");
                     }
                 }
 

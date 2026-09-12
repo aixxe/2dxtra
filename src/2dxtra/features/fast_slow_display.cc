@@ -1,20 +1,22 @@
 #include <fmt/format.h>
+#include <algorithm>
 #include <cmath>
 #include "../hooks/fast_slow_hook.h"
+#include "../judgment.h"
 #include "fast_slow_display.h"
 
 namespace iidxtra::fast_slow_display
 {
-    auto enabled = false;
+    auto options = options_t {};
 
     auto update() -> void
     {
-        fast_slow_hook::set_enabled(enabled);
+        fast_slow_hook::set_options(options);
     }
 
     auto reset() -> void
     {
-        enabled = false;
+        options = {};
         update();
     }
 
@@ -22,7 +24,6 @@ namespace iidxtra::fast_slow_display
     auto timing_t::get_polarity() const -> polarity
     {
         if (!std::isfinite(milliseconds) ||
-            std::abs(milliseconds) > 999.0f ||
             milliseconds == 0.0f) {
             return polarity::zero;
         }
@@ -37,12 +38,13 @@ namespace iidxtra::fast_slow_display
         auto result = std::array<char, 7> {};
 
         // Sanity check bounds.
-        if (!std::isfinite(milliseconds) || std::abs(milliseconds) > 999.0f) {
+        if (!std::isfinite(milliseconds)) {
             return result;
         }
 
         // Tenths of milliseconds (8.3ms --> 83).
-        const auto tenths = static_cast<std::uint32_t>(std::round(std::abs(milliseconds) * 10.0f));
+        const auto magnitude = std::min(std::abs(milliseconds), 999.9f);
+        const auto tenths = static_cast<std::uint32_t>(std::round(magnitude * 10.0f));
 
         // Frame perfect timing - nothing to show.
         if (tenths == 0) {
@@ -81,7 +83,7 @@ namespace iidxtra::fast_slow_display
         }
 
         // hold for charge note
-        if (code == 12) {
+        if (code == bm2dx::judge_display_code::charge_hold) {
             return;
         }
 

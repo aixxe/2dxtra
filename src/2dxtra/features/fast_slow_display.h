@@ -5,7 +5,18 @@
 
 namespace iidxtra::fast_slow_display
 {
-    extern bool enabled;
+    struct options_t
+    {
+        bool show_milliseconds = false;
+        bool show_pgreat = false;
+
+        auto enabled() const -> bool
+        {
+            return show_milliseconds || show_pgreat;
+        }
+    };
+
+    extern options_t options;
 
     auto update() -> void;
     auto reset() -> void;
@@ -15,6 +26,11 @@ namespace iidxtra::fast_slow_display
     struct timing_t
     {
         float milliseconds = 0.0f;
+        bool excessive_poor = false;
+        bool measured = false;
+
+        // ticks [0, 1], never show f/s indicator
+        bool within_dead_zone = false;
 
         auto get_polarity() const -> polarity;
     };
