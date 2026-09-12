@@ -7,16 +7,16 @@
 
 namespace iidxtra::fast_slow_display
 {
-    auto mode = mode_t::off;
+    auto options = options_t {};
 
     auto update() -> void
     {
-        fast_slow_hook::set_mode(mode);
+        fast_slow_hook::set_options(options);
     }
 
     auto reset() -> void
     {
-        mode = mode_t::off;
+        options = {};
         update();
     }
 

@@ -340,32 +340,47 @@ namespace iidxtra::gui::main_window
                         ImGui::PopStyleVar();
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Hide the flashing blue bar above the keys");
                     }
+                }
+
+                if (ImGui::CollapsingHeader("Timing", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ImGui::BeginDisabled();
+                    ImGui::TextWrapped("These options only affect FAST/SLOW indicators "
+                                       "and do not affect acutal timing or scoring");
+                    ImGui::EndDisabled();
 
                     {
-                        auto const options = std::vector<std::tuple<std::string, std::string>> {
-                            {"Off", "Use regular FAST/SLOW sprites"},
-                            {"<PGREAT", "Show ms for GREAT & below"},
-                            {"<PGREAT+", "GREAT & below, shifted to be symmetric"},
-                            {"Always", "Show ms for all judgments except 0.0ms"},
-                        };
-                        int mode = static_cast<int>(fast_slow_display::mode);
-                        auto const& [mode_text, descriptive_text] = options[mode];
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
-                            ImGui::BeginDisabled(!fast_slow_hook::available() || bm2dx::play_session->in_gameplay);
-                            ImGui::Text("FAST/SLOW ms");
+                            ImGui::Text("Show Milliseconds");
                             ImGui::SameLine(300);
-                            ImGui::SetNextItemWidth(100);
-                            if (ImGui::SliderInt("##MillisecondFastSlow", &mode, 0, 3,
-                                                 mode_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
-                            {
-                                fast_slow_display::mode = static_cast<fast_slow_display::mode_t>(mode);
+                            ImGui::BeginDisabled(!fast_slow_hook::available() ||
+                                                 bm2dx::play_session->in_gameplay);
+                            if (ImGui::Checkbox("##FastSlowMilliseconds",
+                                                &fast_slow_display::options.show_milliseconds))
                                 fast_slow_display::update();
-                            }
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "%s", descriptive_text.c_str());
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f},
+                                           "Show ms value instead of FAST/SLOW");
+                    }
+
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Show FAST/SLOW for PGREAT");
+                            ImGui::SameLine(300);
+                            ImGui::BeginDisabled(!fast_slow_hook::available() ||
+                                                 bm2dx::play_session->in_gameplay);
+                            if (ImGui::Checkbox("##FastSlowPGREAT",
+                                                &fast_slow_display::options.show_pgreat))
+                                fast_slow_display::update();
+                            ImGui::EndDisabled();
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f},
+                                           "Requires 120Hz");
                     }
                 }
 

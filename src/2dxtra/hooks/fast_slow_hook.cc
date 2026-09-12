@@ -1,5 +1,6 @@
 #include <MinHook.h>
 #include <fmt/format.h>
+#include <cmath>
 #include <cstring>
 #include <mutex>
 #include <string_view>
@@ -13,14 +14,14 @@
 
 namespace iidxtra::fast_slow_hook
 {
-    // Replace FAST/SLOW sprites with millisecond text rendered by us:
+    // Customize FAST/SLOW indicators without changing the game's judgments:
     //
     // 1. judge_apply_hook_fn captures the millisecond timing value.
     // 2. judge_display_hook_fn updates our stored timing to match the game's judgment.
     // 3. judge_draw_fs_keys_hook_fn & judge_draw_fs_sc_hook_fn call draw_indicator
-    //    to prepare the timing text, then call the game's original draw function.
-    // 4. sprite_draw_hook_fn receives the sprite's x/y coordinates, hides the
-    //    FAST/SLOW sprite, and draws our text in its place.
+    //    to prepare the display direction and optional timing text.
+    // 4. When milliseconds are enabled, sprite_draw_hook_fn receives the sprite's
+    //    x/y coordinates, hides the FAST/SLOW sprite, and draws our text in its place.
 
     using fast_slow_display::polarity;
     using fast_slow_display::timing_t;
@@ -90,18 +91,13 @@ namespace iidxtra::fast_slow_hook
     // Shared timing and enable state are accessed from both game hooks and the menu.
     auto state_mutex = std::mutex {};
     auto cache = fast_slow_display::display_cache_t {};
-    auto display_mode = fast_slow_display::mode_t::off;
+    auto display_options = fast_slow_display::options_t {};
     auto installed = false;
 
-    auto get_mode() -> fast_slow_display::mode_t
+    auto get_options() -> fast_slow_display::options_t
     {
         const auto lock = std::lock_guard { state_mutex };
-        return display_mode;
-    }
-
-    auto is_enabled() -> bool
-    {
-        return get_mode() != fast_slow_display::mode_t::off;
+        return display_options;
     }
 
     // Stores the pending judgment for next draw call.
@@ -158,6 +154,33 @@ namespace iidxtra::fast_slow_hook
         return original_judge_display_init_fn(display, player, mode);
     }
 
+    auto prepare_timing(const float milliseconds, const int ticks, const bool excessive_poor,
+                        const fast_slow_display::options_t& options) -> timing_t
+    {
+        auto timing = timing_t {
+            .milliseconds = milliseconds,
+            .excessive_poor = excessive_poor,
+            .measured = !excessive_poor && std::isfinite(milliseconds),
+            .within_dead_zone = ticks == 0 || ticks == 1
+        };
+
+        // Use the game's measured tick rate to shift everything by half a tick
+        // when displaying millisecond timing windows. This is needed because
+        // the game is tick-based, which means on 120Hz PGREAT is [-1, 0, 1, 2]
+        // ticks where tick 0 is the 0.0ms window. This gives us asymmetric
+        // timing values which would confuse the playe; shifting values by half
+        // a tick fixes that.
+        if (options.show_milliseconds && timing.measured && bm2dx::config)
+        {
+            const float tick_rate = bm2dx::config->monitor_check_fps;
+            // Being really defensive here due to various timing patches
+            if (std::isfinite(tick_rate) && tick_rate > 0.0f)
+                timing.milliseconds -= (1000.0f / tick_rate) * 0.5f;
+        }
+
+        return timing;
+    }
+
     // Timing value must be captured here, before the original call updates the display.
     auto judge_apply_hook_fn(void* context, const int player, const int grade,
                              const int lane, const int score_index) -> int
@@ -168,7 +191,6 @@ namespace iidxtra::fast_slow_hook
         const auto caller = static_cast<std::uint8_t*>(__builtin_return_address(0));
 #endif
 
-        // Load the saved pending value
         const auto saved_pending = pending;
         pending = {};
 
@@ -176,8 +198,8 @@ namespace iidxtra::fast_slow_hook
         {
             const auto& addresses = *bm2dx::addr;
 
-            const auto mode = get_mode();
-            const bool capture_enabled = mode != fast_slow_display::mode_t::off;
+            const auto options = get_options();
+            const bool capture_enabled = options.enabled();
             const bool valid_note = player >= 0 && player < 2 && lane >= 0 && lane < 8;
             const bool is_press = caller == addresses.JUDGE_PRESS_RETURN;
             const bool is_release = caller == addresses.JUDGE_RELEASE_RETURN;
@@ -200,24 +222,13 @@ namespace iidxtra::fast_slow_hook
                         grade == bm2dx::judge_grade::late_poor &&
                         read<std::uint8_t>(candidate.note, 24) == 0;
 
-                    // For Shifted mode, calculate "symmetric" timing value by shifting by half a tick
-                    // We compare the ms value to the tick value to accurately determine tick rate
-                    auto timing = timing_t { candidate.milliseconds, excessive_poor };
-                    if (mode == fast_slow_display::mode_t::great_and_below_shifted &&
-                        !excessive_poor && candidate.ticks != 0 &&
-                        timing.get_polarity() != polarity::zero)
-                    {
-                        const auto half_tick_ms = candidate.milliseconds /
-                            static_cast<float>(candidate.ticks) * 0.5f;
-                        if (half_tick_ms > 0.0f)
-                            timing.milliseconds -= half_tick_ms;
-                    }
-
                     pending =
                     {
                         player,
                         is_scratch,
-                        timing
+                        prepare_timing(candidate.milliseconds,
+                                       candidate.ticks,
+                                       excessive_poor, options)
                     };
                 }
             }
@@ -244,7 +255,7 @@ namespace iidxtra::fast_slow_hook
 
         const auto lock = std::lock_guard { state_mutex };
         auto timing = timing_t {};
-        if (display_mode != fast_slow_display::mode_t::off &&
+        if (display_options.enabled() &&
             pending.player == player && pending.scratch == scratch)
             timing = pending.timing;
 
@@ -252,8 +263,30 @@ namespace iidxtra::fast_slow_hook
         return result;
     }
 
-    // The game still decides whether and where to draw an indicator. We prepare the text here,
-    // then let its draw function reach sprite_draw_hook_fn with the native position and layer.
+    auto prepare_indicator_text(render_context_t& output, const int code) -> void
+    {
+        if (code == bm2dx::judge_display_code::miss && output.timing.excessive_poor)
+        {
+            output.word_label = true;
+            output.text = { 'p', 'o', 'o', 'r', '\0' };
+        }
+        else if (code == bm2dx::judge_display_code::miss &&
+            output.timing.get_polarity() == polarity::zero)
+        {
+            // For misses without measured timing, display 'miss'.
+            output.word_label = true;
+            output.timing = {};
+            output.text = { 'm', 'i', 's', 's', '\0' };
+        }
+        else
+        {
+            // Otherwise, format the text for millisecond timing.
+            output.text = fast_slow_display::format_fastslow_ms(output.timing.milliseconds);
+        }
+    }
+
+    // Prepare indicator visibility, direction and optional text without changing live judgments.
+    // The game's draw function retains the native position and layer.
     auto draw_indicator(void* display, const bool scratch, const draw_indicator_t original) -> void
     {
         const auto saved_rendering = rendering;
@@ -262,8 +295,8 @@ namespace iidxtra::fast_slow_hook
         try
         {
             // if the feature is disabled, call the original
-            const auto mode = get_mode();
-            if (mode == fast_slow_display::mode_t::off)
+            const auto options = get_options();
+            if (!options.enabled())
             {
                 original(display);
                 rendering = saved_rendering;
@@ -271,7 +304,7 @@ namespace iidxtra::fast_slow_hook
             }
 
             auto local_display = read<judge_display_hook_context_t>(display);
-            auto pgreat = false;
+            void* draw_display = display;
             if (local_display.player >= 0 && local_display.player < 2)
             {
                 const auto separate = separate_scratch(local_display.player);
@@ -282,9 +315,7 @@ namespace iidxtra::fast_slow_hook
                     displayed_code = &local_display.key_code;
 
                 const auto code = *displayed_code;
-                 if ((mode == fast_slow_display::mode_t::great_and_below ||
-                     mode == fast_slow_display::mode_t::great_and_below_shifted) &&
-                    code == bm2dx::judge_display_code::pgreat)
+                if (!options.show_pgreat && code == bm2dx::judge_display_code::pgreat)
                 {
                     rendering = saved_rendering;
                     return;
@@ -292,58 +323,44 @@ namespace iidxtra::fast_slow_hook
 
                 {
                     const auto lock = std::lock_guard { state_mutex };
-                    rendering.timing = cache.get(local_display.player, reinterpret_cast<std::uintptr_t>(display),
-                                                 separate, scratch);
+                    rendering.timing = cache.get(local_display.player,
+                        reinterpret_cast<std::uintptr_t>(display), separate, scratch);
                 }
 
-                if (code == bm2dx::judge_display_code::miss && rendering.timing.excessive_poor)
+                // excessive poors are "not measured",
+                // among other error cases where there is no associated note with judgment
+                const bool measured = rendering.timing.measured;
+                const auto direction = rendering.timing.get_polarity();
+                if ((options.show_pgreat && measured && rendering.timing.within_dead_zone) || // within 1 frame
+                    (options.show_milliseconds && measured && direction == polarity::zero) || // 0.0ms
+                    (code == bm2dx::judge_display_code::pgreat && !measured))
                 {
-                    rendering.word_label = true;
-                    rendering.text = { 'p', 'o', 'o', 'r', '\0' };
-                }
-                else if (code == bm2dx::judge_display_code::miss &&
-                    rendering.timing.get_polarity() == polarity::zero)
-                {
-                    // For misses without measured timing, display 'miss'.
-                    rendering.word_label = true;
-                    rendering.timing = {};
-                    rendering.text = { 'm', 'i', 's', 's', '\0' };
-                }
-                else
-                {
-                    // Otherwise, format the text for millisecond timing.
-                    rendering.text = fast_slow_display::format_fastslow_ms(rendering.timing.milliseconds);
+                    rendering = saved_rendering;
+                    return;
                 }
 
-                if (code == bm2dx::judge_display_code::pgreat && rendering.text[0] != '\0')
+                if (options.show_milliseconds)
+                    prepare_indicator_text(rendering, code);
+
+                if (measured && direction != polarity::zero &&
+                    code >= bm2dx::judge_display_code::early_poor &&
+                    code <= bm2dx::judge_display_code::miss)
                 {
-                    // Code 4 (PGREAT) normally emits no FAST/SLOW sprite for us to replace.
-                    // Change only our copy to code 3 (FAST) or 5 (SLOW), making the native draw
-                    // function emit that sprite while leaving the game's real PGREAT untouched.
-                    *displayed_code = rendering.timing.get_polarity() == polarity::slow ?
+                    // A display-only code selects the adjusted direction and enables PGREAT
+                    // indicators while leaving the game's real judgment untouched.
+                    *displayed_code = direction == polarity::slow ?
                         bm2dx::judge_display_code::late_great : bm2dx::judge_display_code::early_great;
-                    pgreat = true;
+                    draw_display = &local_display;
                 }
             }
 
-            if (rendering.text[0] == '\0')
+            if (options.show_milliseconds && rendering.text[0] == '\0')
             {
                 rendering = saved_rendering;
                 return;
             }
 
-            if (pgreat)
-            {
-                // Call the original but convince it to still display f/s indicator even for pgreat
-                original(&local_display);
-            }
-            else
-            {
-                // Call the original.
-                original(display);
-            }
-
-            // Restore the original rendering state.
+            original(draw_display);
             rendering = saved_rendering;
         }
         catch (...)
@@ -479,10 +496,10 @@ namespace iidxtra::fast_slow_hook
         return installed;
     }
 
-    auto set_mode(const fast_slow_display::mode_t value) -> void
+    auto set_options(const fast_slow_display::options_t value) -> void
     {
         const auto lock = std::lock_guard { state_mutex };
-        display_mode = installed ? value : fast_slow_display::mode_t::off;
+        display_options = installed ? value : fast_slow_display::options_t {};
         cache = {};
     }
 

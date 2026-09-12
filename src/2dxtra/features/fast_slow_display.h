@@ -5,14 +5,18 @@
 
 namespace iidxtra::fast_slow_display
 {
-    enum class mode_t {
-        off,
-        great_and_below,
-        great_and_below_shifted,
-        always
+    struct options_t
+    {
+        bool show_milliseconds = false;
+        bool show_pgreat = false;
+
+        auto enabled() const -> bool
+        {
+            return show_milliseconds || show_pgreat;
+        }
     };
 
-    extern mode_t mode;
+    extern options_t options;
 
     auto update() -> void;
     auto reset() -> void;
@@ -23,6 +27,10 @@ namespace iidxtra::fast_slow_display
     {
         float milliseconds = 0.0f;
         bool excessive_poor = false;
+        bool measured = false;
+
+        // ticks [0, 1], never show f/s indicator
+        bool within_dead_zone = false;
 
         auto get_polarity() const -> polarity;
     };
