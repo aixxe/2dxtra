@@ -168,7 +168,7 @@ namespace iidxtra::fast_slow_hook
         // when displaying millisecond timing windows. This is needed because
         // the game is tick-based, which means on 120Hz PGREAT is [-1, 0, 1, 2]
         // ticks where tick 0 is the 0.0ms window. This gives us asymmetric
-        // timing values which would confuse the playe; shifting values by half
+        // timing values which would confuse the player; shifting values by half
         // a tick fixes that.
         if (options.show_milliseconds && timing.measured && bm2dx::config)
         {

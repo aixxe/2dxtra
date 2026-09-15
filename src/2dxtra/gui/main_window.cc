@@ -346,7 +346,7 @@ namespace iidxtra::gui::main_window
                 {
                     ImGui::BeginDisabled();
                     ImGui::TextWrapped("These options only affect FAST/SLOW indicators "
-                                       "and do not affect acutal timing or scoring");
+                                       "and do not affect actual timing or scoring");
                     ImGui::EndDisabled();
 
                     {
