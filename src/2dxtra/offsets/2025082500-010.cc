@@ -25,7 +25,6 @@ versions.push_back({
     .RESULT_ARTIST_FN         = base + 0x0939439, // call that draws the result artist text
     .LOAD_CHART_FN_B          = base + 0x0833d50, // reads one .1 chart into the scratch buffer
     .LOAD_CHART_FN_A          = base + 0x0833e70, // sole caller of LOAD_CHART_FN_B
-    .REMAP_INDEX_FN           = base + 0x0833ec0, // maps the in-game difficulty index onto the .1 chart index
     .CHART_ANALYZE_FN         = base + 0x0832cc0, // boot-time chart load + analyze pass
     .CHART_ANALYZE_RESULT     = base + 0x0832ea1, // instruction after the chart fread (rax = bytes read, rdi = buffer)
     .CHART_CALC_RADAR_FN      = base + 0x0833700, // prologue pattern [pattern]

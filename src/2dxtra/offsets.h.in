@@ -34,7 +34,6 @@ struct offsets
     std::uint8_t* RESULT_ARTIST_FN;       // call that draws the artist line on the result screen
     std::uint8_t* LOAD_CHART_FN_B;        // reads one .1 chart into the scratch buffer
     std::uint8_t* LOAD_CHART_FN_A;        // outer loader; knows which player is loading
-    std::uint8_t* REMAP_INDEX_FN;         // in-game difficulty index -> .1 chart index
     std::uint8_t* CHART_ANALYZE_FN;       // chart load + analyze pass run during boot
     std::uint8_t* CHART_ANALYZE_RESULT;   // instruction after the chart read (rax = bytes, rdi = buffer)
     std::uint8_t* CHART_CALC_RADAR_FN;    // computes the six radar values of a difficulty

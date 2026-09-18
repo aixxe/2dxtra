@@ -6,16 +6,34 @@
 
 namespace iidxtra::chart_loader
 {
+    auto constexpr remap_chart_index(const int index) -> int
+    {
+        switch (index)
+        {
+            case 0: return 3;  // SP BEGINNER
+            case 1: return 1;  // SP NORMAL
+            case 2: return 0;  // SP HYPER
+            case 3: return 2;  // SP ANOTHER
+            case 4: return 4;  // SP LEGGENDARIA
+            case 5: return 9;  // DP BEGINNER [unused]
+            case 6: return 7;  // DP NORMAL
+            case 7: return 6;  // DP HYPER
+            case 8: return 8;  // DP ANOTHER
+            case 9: return 10; // DP LEGGENDARIA
+            default:
+            	return 1; // Unknown: fall back to SP NORMAL
+        }
+    }
+
 	auto load_custom_chart(void* output, const int index) -> bool
 	{
 		// Map the in-game chart index to the .1 index. (e.g. 3 -> 2 for ANOTHER)
-		auto const real_index = reinterpret_cast<std::int64_t (*) (void*, int)>
-			(bm2dx::addr->REMAP_INDEX_FN) (output, index);
+		auto const real_index = remap_chart_index(index);
 
 		// Pull the mutated chart from the database; the mutated hash doubles
 		// as the chart id.
 		auto const pulled = chart_set::pull_chart(
-			bm2dx::state->active_music->id, static_cast<int>(real_index),
+			bm2dx::state->active_music->id, real_index,
 			static_cast<std::uint8_t*>(output), bm2dx::CHART_BUFFER_BYTES);
 
 		if (!pulled.has_value())
