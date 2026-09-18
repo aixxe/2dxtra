@@ -16,7 +16,9 @@ namespace iidxtra::input_hook
 	auto input_hook_fn(bm2dx::InputManagerIIDX* a1) -> void*
 	{
 		auto static timeout = 0;
-		auto static old_state = bm2dx::input_t {};
+
+		// Not zero-initialized here; will be overwritten every poll
+		bm2dx::input_t old_state;
 
 		// The poll fn's input data lives in two disjoint regions of the object:
 		// the button bitfields at the front and the turntable slots further in.
@@ -28,12 +30,8 @@ namespace iidxtra::input_hook
 
 		auto const effect_bit = static_cast<std::size_t>(bm2dx::button::EFFECT);
 
-		// menu is visible -- lock inputs from the game
-		if (gui::visible)
-		{
-			CopyMemory(&old_state.buttons, &a1->data.buttons, buttons_size);
-			CopyMemory(&old_state.p1_turntable, &a1->data.p1_turntable, turntable_size);
-		}
+		CopyMemory(&old_state.buttons, &a1->data.buttons, buttons_size);
+		CopyMemory(&old_state.p1_turntable, &a1->data.p1_turntable, turntable_size);
 
 		// get the new inputs and feed them to the menu
 		auto const result = original_input_fn(a1);
@@ -75,6 +73,8 @@ namespace iidxtra::input_hook
 		{
 			CopyMemory(&a1->data.buttons, &old_state.buttons, buttons_size);
 			CopyMemory(&a1->data.p1_turntable, &old_state.p1_turntable, turntable_size);
+			a1->data.p1_turntable_delta = 0;
+			a1->data.p2_turntable_delta = 0;
 		}
 
 		return result;
