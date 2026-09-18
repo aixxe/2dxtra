@@ -81,6 +81,7 @@ namespace iidxtra::fast_slow_hook
     using init_text_t = bm2dx::text_props_t* (*)(bm2dx::text_props_t* properties);
     using text_render_t = void (*)(int font, int horizontal, int vertical, int layer,
                                   bm2dx::text_props_t* properties, const char* text);
+    using separate_scratch_t = int (*)(void* context, int player);
 
     judge_apply_t original_judge_apply_fn = nullptr;
     judge_display_t original_judge_display_fn = nullptr;
@@ -133,18 +134,8 @@ namespace iidxtra::fast_slow_hook
     // Determines if a user has separated fast/slow display option enabled.
     auto separate_scratch(const int player) -> bool
     {
-        constexpr auto profiles_offset = 0x08;
-        constexpr auto profile_stride = 0xac;
-        constexpr auto separate_scratch_offset = 0x64;
-
-        // Profiles 0/1 are P1/P2 single play.
-        // Profile 2 is double play.
-        const auto profile = bm2dx::state->play_style != 0 ? 2 : player;
-
-        // A value of 1 selects independent key/scratch timing.
-        const auto game_options = reinterpret_cast<void* (*)()>(bm2dx::addr->GET_PLAY_OPTIONS_FN)();
-
-        return read<int>(game_options, profiles_offset + profile_stride * profile + separate_scratch_offset) == 1;
+        const auto is_separate = reinterpret_cast<separate_scratch_t>(bm2dx::addr->IS_SEPARATE_SCRATCH_FN);
+        return is_separate(nullptr, player) == 1;
     }
 
     // Called to reset judge display for a player.

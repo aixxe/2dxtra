@@ -63,7 +63,7 @@ versions.push_back({
     .TIMING_HOOK_FN           = base + 0x082e340, // jump-table dispatcher that installs the judge windows
     .ATTRACT_SELECT_FN        = base + 0x08b1610, // picks the next attract demo chart
 
-    .GET_PLAY_OPTIONS_FN      = base + 0x0897300, // returns player options
+    .IS_SEPARATE_SCRATCH_FN   = base + 0x0818270, // whether separate FAST/SLOW for scratch option is enabled
     .SPRITE_DRAW_FN           = base + 0x033cf60, // creates a named sprite at its native position and layer
     .JUDGE_APPLY_FN           = base + 0x082dcd0, // applies a note judgment; used to obtain ms timing info
     .JUDGE_DISPLAY_FN         = base + 0x09291d0, // updates judge, combo, fast/slow to be drawn
