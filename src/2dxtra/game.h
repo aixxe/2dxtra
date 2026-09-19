@@ -323,26 +323,30 @@ namespace bm2dx
 		std::uint8_t pad_0004[8]; //0x0004
 		std::int32_t note_current; //0x000C
 		std::int32_t note_total; //0x0010
-		std::uint8_t pad_0014[852]; //0x0014
-	}; static_assert(sizeof(play_counters_t) == 0x368);
+		std::uint8_t pad_0014[860]; //0x0014
+	}; static_assert(sizeof(play_counters_t) == 0x370);
 
 	struct play_state_t
 	{
 		std::uint8_t pad_0000[16]; //0x0000
 		play_counters_t players[2]; //0x0010
-		std::uint8_t pad_06E0[876]; //0x06E0
-		std::uint32_t pacemaker_target; //0x0A4C
-	}; static_assert(sizeof(play_state_t) == 0xA50);
+		std::uint8_t pad_06F0[888]; //0x06F0
+		std::uint32_t pacemaker_target; //0x0A68
+	}; static_assert(sizeof(play_state_t) == 0xA6C);
+	static_assert(offsetof(play_state_t, players) == 0x10);
+	static_assert(offsetof(play_state_t, pacemaker_target) == 0xA68);
 
 	struct play_session_t
 	{
 		std::uint8_t pad_0000[0x54]; //0x0000
 		bool in_gameplay; //0x0054
-		std::uint8_t pad_0055[0x30F]; //0x0055
-		std::uint32_t current_score_pb; //0x0364
-		std::uint8_t pad_0368[0x28]; //0x0368
-		pacemaker_type pacemaker_type_id; //0x0390
-	}; static_assert(offsetof(play_session_t, pacemaker_type_id) == 0x390);
+		std::uint8_t pad_0055[0x3BF]; //0x0055
+		std::uint32_t current_score_pb; //0x0414
+		std::uint8_t pad_0418[0x28]; //0x0418
+		pacemaker_type pacemaker_type_id; //0x0440
+	}; static_assert(offsetof(play_session_t, pacemaker_type_id) == 0x440);
+	static_assert(offsetof(play_session_t, in_gameplay) == 0x54);
+	static_assert(offsetof(play_session_t, current_score_pb) == 0x414);
 
 	struct game_score_t
 	{
