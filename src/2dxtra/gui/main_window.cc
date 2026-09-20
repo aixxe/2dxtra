@@ -237,6 +237,10 @@ namespace iidxtra::gui::main_window
                         }
                         ImGui::PopStyleVar();
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Alter the chart to be faster or slower");
+                        ImGui::SameLine(300);
+                        ImGui::BeginDisabled(!chart_set::switch_enabled);
+                        ImGui::Checkbox("Pitch follows speed##ChartSpeedPitch", &chart_speed::pitch_follows_rate);
+                        ImGui::EndDisabled();
                     }
 
                     // CN Transformer
