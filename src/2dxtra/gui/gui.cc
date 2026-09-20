@@ -5,6 +5,7 @@
 #include "log_window.h"
 #include "main_window.h"
 #include "timing_histogram_window.h"
+#include "res/fonts.h"
 #include "../input.h"
 #include "../hooks/renderer_hook.h"
 
@@ -54,6 +55,8 @@ namespace iidxtra::gui
 
         io.IniFilename = nullptr;
         io.BackendPlatformName = "imgui_impl_2dxtra";
+
+        io.Fonts->AddFontFromMemoryCompressedTTF(main_font_compressed_data, main_font_compressed_size, 13);
 
         {
             auto& style = ImGui::GetStyle();
