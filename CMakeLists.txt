@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(2dxtra VERSION 7.0.0.0 LANGUAGES CXX)
+project(2dxtra VERSION 7.1.0.0 LANGUAGES CXX)
 
 include(cmake/GetGitRevisionDescription.cmake)
 

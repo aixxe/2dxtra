@@ -59,7 +59,7 @@ namespace iidxtra::gui::main_window
 		// window setup
 		ImGui::SetNextWindowFocus();
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
-		ImGui::SetNextWindowSize({550, 450});
+		ImGui::SetNextWindowSize({570, 450});
 		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDecoration);
 
         // usage hints
@@ -109,7 +109,7 @@ namespace iidxtra::gui::main_window
 							ImGui::Text("Un-randomizer");
 							ImGui::SameLine();
 							ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
-							ImGui::SameLine(300);
+							ImGui::SameLine(285);
 
 							if (ImGui::Button("Configure##UnrandomizerWindow"))
 								unrandomizer_window::visible = true;
@@ -126,7 +126,7 @@ namespace iidxtra::gui::main_window
 							ImGui::Text("Timing Modifier");
 							ImGui::SameLine();
 							ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
-							ImGui::SameLine(300);
+							ImGui::SameLine(285);
 
 							if (ImGui::Button("Configure##TimingModifierWindow"))
                                 timing_modifier_window::visible = true;
@@ -145,12 +145,12 @@ namespace iidxtra::gui::main_window
 							ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
 
                             ImGui::BeginDisabled(!p1_active);
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::Checkbox("P1##AutoPlay", &autoplay::enabled_p1);
                             ImGui::EndDisabled();
 
                             ImGui::BeginDisabled(!p2_active);
-                            ImGui::SameLine(340);
+                            ImGui::SameLine(325);
                             ImGui::Checkbox("P2##AutoPlay", &autoplay::enabled_p2);
                             ImGui::EndDisabled();
 						}
@@ -165,7 +165,7 @@ namespace iidxtra::gui::main_window
 							ImGui::Text("Regular Speed");
 							ImGui::SameLine();
 							ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
-							ImGui::SameLine(300);
+							ImGui::SameLine(285);
 							ImGui::Checkbox("Global##RegularSpeed", &regular_speed::enabled);
 						}
 						ImGui::PopStyleVar();
@@ -179,11 +179,11 @@ namespace iidxtra::gui::main_window
                             ImGui::Text("Chart Speed");
                             ImGui::SameLine();
                             ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(!chart_set::switch_enabled);
 
                             // Slider
-                            ImGui::SetNextItemWidth(100);
+                            ImGui::SetNextItemWidth(80);
                             if (ImGui::SliderFloat("##ChartSpeed",
                                 &chart_speed::rate, chart_speed::rate_min, chart_speed::rate_max, "x%.2f"))
                             {
@@ -233,14 +233,13 @@ namespace iidxtra::gui::main_window
                                 }
                             }
 
+                            ImGui::SameLine(0, 5.0f);
+                            ImGui::Checkbox("Pitch##ChartSpeedPitch", &chart_speed::pitch_follows_rate);
+
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Alter the chart to be faster or slower");
-                        ImGui::SameLine(300);
-                        ImGui::BeginDisabled(!chart_set::switch_enabled);
-                        ImGui::Checkbox("Pitch follows speed##ChartSpeedPitch", &chart_speed::pitch_follows_rate);
-                        ImGui::EndDisabled();
                     }
 
                     // CN Transformer
@@ -250,7 +249,7 @@ namespace iidxtra::gui::main_window
 							ImGui::Text("CN Transformer");
 							ImGui::SameLine();
 							ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
-							ImGui::SameLine(300);
+							ImGui::SameLine(285);
 
 							if (ImGui::Button("Configure##CNTransformerWindow"))
                                 cn_transformer_window::visible = true;
@@ -266,7 +265,7 @@ namespace iidxtra::gui::main_window
                         {
                             ImGui::Text("Auto Retry");
                             ImGui::SameLine();
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
 
                             if (ImGui::Button("Configure##AutoRetryWindow"))
                                 autoretry_window::visible = true;
@@ -287,10 +286,10 @@ namespace iidxtra::gui::main_window
 						ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
 						{
 							ImGui::Text("Keysound Switch");
-							ImGui::SameLine(300);
+							ImGui::SameLine(285);
 							ImGui::SetNextItemWidth(100);
 							ImGui::SliderInt("##KeysoundType", &keysound_switch::override_type, 0, 3, mode_text.c_str());
-                            ImGui::SameLine(405);
+                            ImGui::SameLine(390);
                             ImGui::Checkbox("Mute BGM", &keysound_switch::mute_bgm);
 						}
 						ImGui::PopStyleVar();
@@ -308,7 +307,7 @@ namespace iidxtra::gui::main_window
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::Text("Dark Mode");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##DarkMode", &play_visuals::dark_mode))
                                 play_visuals::update_dark_mode();
@@ -322,7 +321,7 @@ namespace iidxtra::gui::main_window
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::Text("Disable Measure Lines");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##HideMeasureLines", &play_visuals::no_measure_lines))
                                 play_visuals::update_no_measure_lines();
@@ -336,7 +335,7 @@ namespace iidxtra::gui::main_window
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::Text("Disable BPM Gradient");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##HideBPMGradient", &play_visuals::no_bpm_gradient))
                                 play_visuals::update_no_bpm_gradient();
@@ -358,7 +357,7 @@ namespace iidxtra::gui::main_window
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::Text("Show Milliseconds");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(!fast_slow_hook::available() ||
                                                  bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##FastSlowMilliseconds",
@@ -375,7 +374,7 @@ namespace iidxtra::gui::main_window
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
                             ImGui::Text("Show FAST/SLOW for PGREAT");
-                            ImGui::SameLine(300);
+                            ImGui::SameLine(285);
                             ImGui::BeginDisabled(!fast_slow_hook::available() ||
                                                  bm2dx::play_session->in_gameplay);
                             if (ImGui::Checkbox("##FastSlowPGREAT",
@@ -395,7 +394,7 @@ namespace iidxtra::gui::main_window
                     {
                         ImGui::BeginDisabled(!fast_slow_hook::available() || bm2dx::play_session->in_gameplay);
                         ImGui::Text("Timing Histogram");
-                        ImGui::SameLine(300);
+                        ImGui::SameLine(285);
                         if (ImGui::Checkbox("##TimingHistogram", &timing_histogram::enabled))
                             timing_histogram::update();
                         ImGui::EndDisabled();
@@ -415,7 +414,7 @@ namespace iidxtra::gui::main_window
                 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                 		{
                 			ImGui::Text("Menu Lock");
-                			ImGui::SameLine(300);
+                			ImGui::SameLine(285);
                 			ImGui::Checkbox("##PlayLockMenu", &play_lock_state);
                 		}
                 		ImGui::PopStyleVar();
@@ -429,7 +428,7 @@ namespace iidxtra::gui::main_window
                 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                 		{
                 			ImGui::Text("Event Mode");
-                			ImGui::SameLine(300);
+                			ImGui::SameLine(285);
                             #if FORCE_EVENT_MODE_ENABLED == 0
                 			ImGui::Checkbox("##EventMode", &config_event_mode);
                             #else

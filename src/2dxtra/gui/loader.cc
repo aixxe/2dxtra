@@ -21,7 +21,7 @@ namespace iidxtra::gui
 				if (ImGui::Selectable(name.c_str(), chart_set::active == name, flags))
 					chart_set::set_active(name);
 
-				ImGui::SameLine(300); ImGui::Text("%llu charts", set.count);
+				ImGui::SameLine(285); ImGui::Text("%llu charts", set.count);
 			}
 		ImGui::Unindent(10);
 

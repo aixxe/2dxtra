@@ -272,7 +272,7 @@ namespace iidxtra::gui::unrandomizer_window
     {
 		ImGui::SetNextWindowFocus();
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
-		ImGui::SetNextWindowSize({485, 275});
+		ImGui::SetNextWindowSize({485, 295});
 
 		ImGui::Begin("Configuration :: Un-randomizer", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
