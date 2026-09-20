@@ -3,6 +3,7 @@
 #include "../log.h"
 #include "../game.h"
 #include "../gui/gui.h"
+#include "../gui/unrandomizer_window.h"
 #include "../chart_set.h"
 #include "../score_set.h"
 #include "../features/autoplay.h"
@@ -48,6 +49,7 @@ namespace iidxtra::reset_state_hook
             log::debug("Configuration reset");
 
 			gui::play_lock_state = false;
+            gui::unrandomizer_window::reset();
 
             autoplay::reset();
             cn_override::reset();

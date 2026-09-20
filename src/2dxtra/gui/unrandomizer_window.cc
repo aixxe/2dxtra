@@ -15,6 +15,15 @@ namespace iidxtra::gui::unrandomizer_window
 	auto in_bind_key_p1 = std::uint8_t { 0 };
 	auto in_bind_key_p2 = std::uint8_t { 0 };
 
+    auto reset() -> void
+    {
+        in_bind_mode_p1 = false;
+        in_bind_mode_p2 = false;
+        in_bind_key_p1 = 0;
+        in_bind_key_p2 = 0;
+        input_enabled = true;
+    }
+
     auto draw_player_config_tab(const std::uint8_t player) -> void
     {
         if (!ImGui::BeginTabItem((player == 0 ? "P1/LEFT": "P2/RIGHT")))
@@ -270,13 +279,7 @@ namespace iidxtra::gui::unrandomizer_window
         if (bm2dx::state->play_style == 0 && !bm2dx::state->p1_active && !bm2dx::state->p2_active)
         {
             // exit bind mode if we were stuck in it
-            if (in_bind_mode_p1 || in_bind_mode_p2)
-            {
-                input_enabled = true;
-
-                in_bind_mode_p1 = false;
-                in_bind_mode_p2 = false;
-            }
+            reset();
 
             ImGui::Text("Options will appear here once a player is active");
 

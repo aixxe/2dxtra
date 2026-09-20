@@ -32,7 +32,12 @@ namespace iidxtra::autoretry
     auto constexpr button_check_length = 5;
 
     auto reset() -> void
-        { enabled = false; }
+    {
+        enabled = false;
+        target = target_mode::Off;
+        destination = target_destination::Graph;
+        retrying = false;
+    }
 
     auto inline get_max_score(
         const std::int32_t current_note,
