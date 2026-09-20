@@ -7,6 +7,7 @@
 #include "timing_histogram_window.h"
 #include "res/fonts.h"
 #include "../input.h"
+#include "../features/chart_speed.h"
 #include "../hooks/renderer_hook.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -140,6 +141,7 @@ namespace iidxtra::gui
     auto render() -> void
     {
 		timing_histogram_window::render();
+        chart_speed::render_progress();
 		log_window::render();
 
 		if (visible)

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -6,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include <imgui.h>
 #include <MinHook.h>
 #include <rubberband/RubberBandStretcher.h>
 
@@ -85,6 +87,9 @@ namespace iidxtra::chart_speed
 	// Keep the original pitch-preserving behavior unless the user opts in.
 	bool pitch_follows_rate = false;
 
+	// Sound mutation progress; negative while idle or processing a preview.
+	static std::atomic audio_progress { -1.0f };
+
 	// original function
 	void* original_audio_load_fn = nullptr;
 
@@ -94,6 +99,36 @@ namespace iidxtra::chart_speed
 		rate_previous = 1.0f;
 		pitch_follows_rate = false;
 	}
+
+    auto render_progress() -> void
+    {
+        auto const progress = audio_progress.load(std::memory_order_relaxed);
+        if (!bm2dx::play_session->in_gameplay || progress < 0.0f)
+            return;
+
+        ImGui::SetNextWindowBgAlpha(0.9f);
+        ImGui::SetNextWindowPos({
+            ImGui::GetIO().DisplaySize.x * 0.5f,
+            ImGui::GetIO().DisplaySize.y - 30.0f
+        }, 0, {0.5f, 1.0f});
+
+        auto const flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+        if (ImGui::Begin("Chart speed progress", nullptr, flags))
+        {
+            auto const label = "Processing sound rate...";
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (300.0f - ImGui::CalcTextSize(label).x) * 0.5f);
+            ImGui::TextUnformatted(label);
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, {0.0f, 0.0f, 0.0f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, {1.0f, 1.0f, 1.0f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_Text, {0.46f, 0.46f, 0.46f, 1.0f});
+            ImGui::ProgressBar(progress, {300.0f, 0.0f});
+            ImGui::PopStyleColor(3);
+        }
+        ImGui::End();
+    }
 
 	auto mutate(const std::uint8_t player, std::vector<bm2dx::chart_event_t>& buffer) -> void
 	{
@@ -295,6 +330,7 @@ namespace iidxtra::chart_speed
 
 		std::unordered_set<void*> seen_waves;
 		auto processed = std::size_t { 0 };
+		auto const show_progress = bm2dx::play_session->in_gameplay;
 
 		for (std::size_t i = 0; i < num_blocks; i++)
 		{
@@ -331,6 +367,9 @@ namespace iidxtra::chart_speed
 			auto const old_frames = static_cast<std::size_t>(old_pcm_bytes / old_block_align);
 			if (old_frames == 0)
 				continue;
+
+			if (show_progress)
+				audio_progress.store(static_cast<float>(i) / num_blocks, std::memory_order_relaxed);
 
 			auto const start_frame = *reinterpret_cast<std::int32_t*>(voice + 0x60);
 			auto const end_frame = *reinterpret_cast<std::int32_t*>(voice + 0x64);
@@ -411,6 +450,9 @@ namespace iidxtra::chart_speed
 				stretcher.process(const_cast<const float**>(feed_ptrs.data()), chunk, is_final);
 				pos += chunk;
 				drain();
+				if (show_progress)
+					audio_progress.store((static_cast<float>(i) + static_cast<float>(pos) / old_frames) /
+						num_blocks, std::memory_order_relaxed);
 			}
 			drain();
 
@@ -441,6 +483,9 @@ namespace iidxtra::chart_speed
 
 			processed++;
 		}
+
+		if (show_progress)
+			audio_progress.store(-1.0f, std::memory_order_relaxed);
 
 		log::debug("audio load hook: stretched {} unique waves for index {}", processed, sound_index);
 		return result;

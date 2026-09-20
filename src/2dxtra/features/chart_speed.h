@@ -17,6 +17,7 @@ namespace iidxtra::chart_speed
 	extern bool pitch_follows_rate;
 
 	auto reset() -> void;
+	auto render_progress() -> void;
 	auto mutate(std::uint8_t player, std::vector<bm2dx::chart_event_t>& buffer) -> void;
 	auto install_hook() -> void;
 }
