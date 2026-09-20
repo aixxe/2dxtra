@@ -82,6 +82,9 @@ namespace iidxtra::chart_speed
 	// Previously used multiplier by the user; used for the UI
 	float rate_previous = 1.0f;
 
+	// Keep the original pitch-preserving behavior unless the user opts in.
+	bool pitch_follows_rate = false;
+
 	// original function
 	void* original_audio_load_fn = nullptr;
 
@@ -89,6 +92,7 @@ namespace iidxtra::chart_speed
 	{
 		rate = 1.0f;
 		rate_previous = 1.0f;
+		pitch_follows_rate = false;
 	}
 
 	auto mutate(const std::uint8_t player, std::vector<bm2dx::chart_event_t>& buffer) -> void
@@ -343,22 +347,24 @@ namespace iidxtra::chart_speed
 					dst[frame] = static_cast<float>(src[frame * channels + ch]) / 32768.0f;
 			}
 
-			// time-stretch the wave to the chart speed while preserving pitch.
-			// Mirrors the native bm2dx-2026080500.exe implementation (stretcher
+			// Time-stretch the wave to the chart speed, optionally shifting its
+			// pitch by the same multiplier.
+			// Keep the native bm2dx-2026080500.exe processing pattern (stretcher
 			// factory sub_140355E40 + drive loop sub_140356980):
 			//   - ctor options = OptionProcessRealTime (1); NO study pass
 			//   - setMaxProcessSize(1024); 1024-frame process chunks, final on last
 			//   - output capped at trunc(time_ratio * input_frames)
 			//   - drain loop: available() clamped to 1024 per retrieve, until 0/-1
 			auto const time_ratio = 1.0 / rate;
+			auto const pitch_scale = pitch_follows_rate ? static_cast<double>(rate) : 1.0;
 			RubberBand::RubberBandStretcher stretcher(
 				static_cast<std::size_t>(fmt->nSamplesPerSec),
 				static_cast<std::size_t>(channels),
 				RubberBand::RubberBandStretcher::OptionProcessRealTime,
 				time_ratio,
-				1.0);
+				pitch_scale);
 			stretcher.setTimeRatio(time_ratio);
-			stretcher.setPitchScale(1.0);
+			stretcher.setPitchScale(pitch_scale);
 			stretcher.setMaxProcessSize(1024);
 
 			auto const out_cap = static_cast<std::int32_t>(
