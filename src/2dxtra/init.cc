@@ -3,6 +3,7 @@
 #include "chart_set.h"
 #include "score_set.h"
 #include "database.h"
+#include "settings.h"
 #include "hooks/input_hook.h"
 #include "hooks/network_hook.h"
 #include "hooks/chart_load_hook.h"
@@ -71,6 +72,8 @@ namespace iidxtra
 		unrandomizer::install_hook();
 		attract_randomizer_hook::install_hook();
 		chart_speed::install_hook();
+
+		settings::init(db);
 
 		// Enable all hooks.
 		MH_EnableHook(MH_ALL_HOOKS);

@@ -26,6 +26,26 @@ namespace iidxtra::reset_state_hook
 {
 	void* original_reset_state_fn = nullptr;
 
+    auto reset_options() -> void
+    {
+        gui::play_lock_state = false;
+        gui::unrandomizer_window::reset();
+
+        autoplay::reset();
+        cn_override::reset();
+        regular_speed::reset();
+        chart_speed::reset();
+        scratch_swap::reset();
+        unrandomizer::reset();
+        keysound_switch::reset();
+        cn_transformer::reset();
+        play_visuals::reset();
+        timing_modifier::reset();
+        fast_slow_display::reset();
+        timing_histogram::reset();
+        autoretry::reset();
+    }
+
 	auto reset_state_hook_fn(std::uint32_t a1) -> void*
 	{
         timing_histogram::leave_result();
@@ -48,22 +68,7 @@ namespace iidxtra::reset_state_hook
         {
             log::debug("Configuration reset");
 
-			gui::play_lock_state = false;
-            gui::unrandomizer_window::reset();
-
-            autoplay::reset();
-            cn_override::reset();
-            regular_speed::reset();
-            chart_speed::reset();
-            scratch_swap::reset();
-            unrandomizer::reset();
-            keysound_switch::reset();
-            cn_transformer::reset();
-            play_visuals::reset();
-            timing_modifier::reset();
-            fast_slow_display::reset();
-            timing_histogram::reset();
-            autoretry::reset();
+            reset_options();
         }
 
 		return reinterpret_cast<void* (*) (std::uint32_t)>(original_reset_state_fn)(a1);

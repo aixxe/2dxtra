@@ -12,6 +12,7 @@
 #include "autoretry_window.h"
 #include "../game.h"
 #include "../chart_set.h"
+#include "../settings.h"
 #include "../features/autoplay.h"
 #include "../features/regular_speed.h"
 #include "../features/chart_speed.h"
@@ -43,6 +44,9 @@ namespace iidxtra::gui::main_window
 
     auto render() -> void
     {
+        static const char* settings_status = nullptr;
+        static bool settings_success = false;
+
 		// darken game
         ImGui::GetBackgroundDrawList()->AddRectFilled({0, 0}, {ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y}, IM_COL32(0, 0, 0, 200), 0, 0);
 
@@ -61,6 +65,10 @@ namespace iidxtra::gui::main_window
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
 		ImGui::SetNextWindowSize({570, 450});
 		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDecoration);
+
+        // Reset the message used to display settings save/load status
+        if (ImGui::IsWindowAppearing())
+            settings_status = nullptr;
 
         // usage hints
         {
@@ -440,6 +448,49 @@ namespace iidxtra::gui::main_window
                 		ImGui::PopStyleVar();
                 		ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Reset all options to default after card out");
                 	}
+
+                    ImGui::Separator();
+
+                    ImGui::BeginDisabled(FORCE_EVENT_MODE_ENABLED);
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Save Settings to Database");
+                            ImGui::SameLine(285);
+                            if (ImGui::Button("Save##Settings"))
+                            {
+                                settings_success = settings::save();
+                                settings_status = settings_success ? "Saved successfully" : "Error while saving to disk";
+                            }
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Restore these options at the next game start");
+                    }
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Reset to Default");
+                            ImGui::SameLine(285);
+                            ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
+                            if (ImGui::Button("Reset##Settings"))
+                            {
+                                settings::reset();
+                                settings_success = true;
+                                settings_status = "Defaults restored (not saved)";
+                            }
+                            ImGui::EndDisabled();
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Reset to default settings");
+                    }
+                    if (settings_status)
+                    {
+                        if (settings_success)
+                            ImGui::TextColored({0.2f, 0.8f, 0.2f, 1.f}, "%s", settings_status);
+                        else
+                            ImGui::TextColored({0.5f, 0.2f, 0.2f, 1.f}, "%s", settings_status);
+                    }
+                    ImGui::EndDisabled();
                 }
 
 				ImGui::EndTabItem();

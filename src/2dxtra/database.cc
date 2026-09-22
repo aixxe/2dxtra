@@ -23,6 +23,10 @@ namespace database
     namespace
     {
         constexpr char kCreate[] =
+            "CREATE TABLE IF NOT EXISTS settings ("
+            "  key TEXT PRIMARY KEY NOT NULL,"
+            "  value NOT NULL"
+            ");"
             "CREATE TABLE IF NOT EXISTS chart_set ("
             "  id   INTEGER PRIMARY KEY,"
             "  name TEXT NOT NULL UNIQUE"
@@ -102,6 +106,13 @@ namespace database
         constexpr char kCount[] =
             "SELECT COUNT(*) FROM charts;";
 
+        constexpr char kLoadSettings[] =
+            "SELECT key, value FROM settings;";
+
+        constexpr char kSaveSettings[] =
+            "INSERT INTO settings (key, value) VALUES (?1, ?2)"
+            " ON CONFLICT(key) DO UPDATE SET value=excluded.value;";
+
         auto bind_key(sqlite3_stmt* stmt, int chart_set, int music_id,
                       int difficulty) -> void
         {
@@ -176,6 +187,40 @@ namespace database
 
             auto const n = ZSTD_decompress(dst, capacity, src, src_size);
             return ZSTD_isError(n) ? 0 : n;
+        }
+        
+        auto write_settings(sqlite3* handle, const settings_t& values) -> bool
+        {
+            sqlite3_stmt* stmt = nullptr;
+            auto result = sqlite3_prepare_v2(handle, kSaveSettings, -1, &stmt, nullptr);
+            if (result != SQLITE_OK)
+                return false;
+
+            for (auto const& [key, value] : values)
+            {
+                result = sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+                if (result != SQLITE_OK)
+                    break;
+
+                // Value can be either an integer (most settings) or a double (timing windows).
+                if (auto const* integer = std::get_if<std::int64_t>(&value))
+                    result = sqlite3_bind_int64(stmt, 2, *integer);
+                else
+                    result = sqlite3_bind_double(stmt, 2, std::get<double>(value));
+
+                if (result != SQLITE_OK)
+                    break;
+
+                result = sqlite3_step(stmt);
+                if (result != SQLITE_DONE)
+                    break;
+
+                result = sqlite3_reset(stmt);
+                if (result != SQLITE_OK)
+                    break;
+            }
+            sqlite3_finalize(stmt);
+            return result == SQLITE_OK;
         }
     }
 
@@ -413,5 +458,66 @@ namespace database
         sqlite3_wal_checkpoint_v2(
             d->handle, nullptr, SQLITE_CHECKPOINT_TRUNCATE, nullptr, nullptr);
         sqlite3_exec(d->handle, kPragmaDelete, nullptr, nullptr, nullptr);
+    }
+
+    auto load_settings(db* d) -> settings_t
+    {
+        if (!d)
+            return {};
+
+        sqlite3_stmt* stmt = nullptr;
+        if (sqlite3_prepare_v2(d->handle, kLoadSettings, -1, &stmt, nullptr) != SQLITE_OK)
+            return {};
+
+        settings_t settings;
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            auto const* key = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            switch (sqlite3_column_type(stmt, 1))
+            {
+                case SQLITE_INTEGER:
+                {
+                    auto const value = static_cast<std::int64_t>(sqlite3_column_int64(stmt, 1));
+                    settings.emplace_back(key, value);
+                    break;
+                }
+                case SQLITE_FLOAT:
+                {
+                    auto const value = sqlite3_column_double(stmt, 1);
+                    settings.emplace_back(key, value);
+                    break;
+                }
+            }
+        }
+
+        sqlite3_finalize(stmt);
+        return settings;
+    }
+
+    auto save_settings(db* d, const settings_t& settings) -> bool
+    {
+        if (!d)
+            return false;
+
+        // Acquire the db mutex
+        auto* mutex = sqlite3_db_mutex(d->handle);
+        sqlite3_mutex_enter(mutex);
+        if (sqlite3_exec(d->handle, "BEGIN IMMEDIATE;", nullptr, nullptr, nullptr) != SQLITE_OK)
+        {
+            sqlite3_mutex_leave(mutex);
+            return false;
+        }
+
+        // Write the settings to the database
+        auto success = write_settings(d->handle, settings);
+
+        // Commit, or roll back on failure
+        if (success)
+            success = sqlite3_exec(d->handle, "COMMIT;", nullptr, nullptr, nullptr) == SQLITE_OK;
+        if (!success)
+            sqlite3_exec(d->handle, "ROLLBACK;", nullptr, nullptr, nullptr);
+
+        sqlite3_mutex_leave(mutex);
+        return success;
     }
 }
