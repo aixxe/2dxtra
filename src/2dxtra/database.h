@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace database
@@ -27,6 +28,9 @@ namespace database
 
     struct db;
 
+    using setting_value = std::variant<std::int64_t, double>;
+    using settings_t = std::vector<std::pair<std::string, setting_value>>;
+
     auto open(const char* path) -> db*;
     auto close(db*) -> void;
     auto lookup(db*, int chart_set, int music_id, int difficulty, const std::string& orig_hash) -> std::optional<chart_row>;
@@ -37,4 +41,6 @@ namespace database
     auto exists(db*, const std::string& hash) -> bool;
     auto chart_count(db*) -> std::size_t;
     void flush(db*);
+    auto load_settings(db*) -> settings_t;
+    auto save_settings(db*, const settings_t&) -> bool;
 }

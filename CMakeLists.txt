@@ -42,6 +42,7 @@ set(SOURCE_FILES
     src/2dxtra/chart_set.cc
     src/2dxtra/score_set.cc
     src/2dxtra/database.cc
+    src/2dxtra/settings.cc
     src/2dxtra/urafumen.cc
     src/2dxtra/all_scratch.cc
     src/2dxtra/gui/gui.cc
