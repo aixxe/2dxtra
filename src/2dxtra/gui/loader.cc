@@ -11,7 +11,11 @@ namespace iidxtra::gui
 		if (!ImGui::CollapsingHeader("Loader", ImGuiTreeNodeFlags_DefaultOpen))
 			return;
 
-		ImGui::Text("Available chart sets:");
+    	if (chart_set::switch_enabled)
+    		ImGui::Text("Available chart sets (%zu):", chart_set::custom.size() + 1);
+    	else
+    		ImGui::TextColored({0.5f, 0.2f, 0.2f, 1.f}, "The active chart set can only be changed in music select");
+
 		ImGui::Indent(10);
 			if (ImGui::Selectable("Default", chart_set::active.empty(), flags))
 				chart_set::revert();
@@ -24,8 +28,5 @@ namespace iidxtra::gui
 				ImGui::SameLine(285); ImGui::Text("%llu charts", set.count);
 			}
 		ImGui::Unindent(10);
-
-		if (!chart_set::switch_enabled)
-			ImGui::TextColored({0.5f, 0.2f, 0.2f, 1.f}, "The active chart set can only be changed in music select");
     }
 }
