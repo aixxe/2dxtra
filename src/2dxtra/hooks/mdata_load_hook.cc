@@ -58,6 +58,9 @@ namespace iidxtra::mdata_load_hook
 			// database file is complete on disk.
 			database::flush(chart_set::cache());
 
+			// Populate the chart set list before entering music select.
+			chart_set::load_sets();
+
 		    // Step 0: Initialize the renderer.
             renderer_hook::install_hook();
 
