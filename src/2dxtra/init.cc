@@ -27,6 +27,7 @@
 #include "features/unrandomizer.h"
 #include "features/autoretry.h"
 #include "features/chart_speed.h"
+#include "features/hi_speed_reset.h"
 
 namespace iidxtra
 {
@@ -72,6 +73,7 @@ namespace iidxtra
 		unrandomizer::install_hook();
 		attract_randomizer_hook::install_hook();
 		chart_speed::install_hook();
+        hi_speed_reset::install_hook();
 
 		settings::init(db);
 

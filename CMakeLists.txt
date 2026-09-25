@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(2dxtra VERSION 7.1.0.0 LANGUAGES CXX)
+project(2dxtra VERSION 7.2.0.0 LANGUAGES CXX)
 
 include(cmake/GetGitRevisionDescription.cmake)
 
@@ -87,6 +87,7 @@ set(SOURCE_FILES
     src/2dxtra/features/fast_slow_display.cc
     src/2dxtra/features/timing_histogram.cc
     src/2dxtra/features/autoretry.cc
+    src/2dxtra/features/hi_speed_reset.cc
     res/2dxtra.def
     res/2dxtra.rc
 )

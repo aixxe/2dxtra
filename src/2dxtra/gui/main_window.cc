@@ -20,6 +20,7 @@
 #include "../features/play_visuals.h"
 #include "../features/fast_slow_display.h"
 #include "../features/timing_histogram.h"
+#include "../features/hi_speed_reset.h"
 #include "../hooks/fast_slow_hook.h"
 
 namespace iidxtra::gui::main_window
@@ -62,7 +63,7 @@ namespace iidxtra::gui::main_window
 		// window setup
 		ImGui::SetNextWindowFocus();
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
-		ImGui::SetNextWindowSize({570, 450});
+		ImGui::SetNextWindowSize({570, 465});
 		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDecoration);
 
         // Reset the message used to display settings save/load status
@@ -279,6 +280,18 @@ namespace iidxtra::gui::main_window
                         }
                         ImGui::PopStyleVar();
                         ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Retry when unable to meet pacemaker score");
+                    }
+
+                	// Hi-Speed Reset
+                    {
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+                        {
+                            ImGui::Text("Hi-Speed Reset");
+                            ImGui::SameLine(285);
+                            ImGui::Checkbox("##HiSpeedReset", &hi_speed_reset::enabled);
+                        }
+                        ImGui::PopStyleVar();
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Double-tap START to reset Floating Hi-Speed");
                     }
 
 					// Keysound Switch

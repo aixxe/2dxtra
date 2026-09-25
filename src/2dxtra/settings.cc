@@ -11,6 +11,7 @@
 #include "features/cn_override.h"
 #include "features/cn_transformer.h"
 #include "features/fast_slow_display.h"
+#include "features/hi_speed_reset.h"
 #include "features/keysound_switch.h"
 #include "features/play_visuals.h"
 #include "features/regular_speed.h"
@@ -43,6 +44,7 @@ namespace iidxtra::settings
     static auto for_each_setting(Action apply) -> void
     {
         apply("interface.menu_lock", gui::play_lock_state);
+        apply("hi_speed_reset.enabled", hi_speed_reset::enabled);
 
         #if FORCE_EVENT_MODE_ENABLED == 0
         apply("settings.event_mode", gui::config_event_mode);

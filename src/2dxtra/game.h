@@ -340,12 +340,15 @@ namespace bm2dx
 	{
 		std::uint8_t pad_0000[0x54]; //0x0000
 		bool in_gameplay; //0x0054
-		std::uint8_t pad_0055[0x3BF]; //0x0055
+        std::uint8_t pad_0055[0x33]; //0x0055
+        bool ready; //0x0088, set when the READY animation starts
+        std::uint8_t pad_0089[0x38B]; //0x0089
 		std::uint32_t current_score_pb; //0x0414
 		std::uint8_t pad_0418[0x28]; //0x0418
 		pacemaker_type pacemaker_type_id; //0x0440
 	}; static_assert(offsetof(play_session_t, pacemaker_type_id) == 0x440);
 	static_assert(offsetof(play_session_t, in_gameplay) == 0x54);
+    static_assert(offsetof(play_session_t, ready) == 0x88);
 	static_assert(offsetof(play_session_t, current_score_pb) == 0x414);
 
 	struct game_score_t
@@ -356,6 +359,17 @@ namespace bm2dx
 		std::int8_t is_populated; //0x002D
 		std::uint8_t pad_002E[2]; //0x002E
 	}; static_assert(sizeof(game_score_t) == 0x30);
+
+    struct lane_cover_control
+    {
+        std::int32_t player; //0x0000
+        std::uint8_t pad_0004[36]; //0x0004
+        bool cover_visible; //0x0028
+        std::uint8_t pad_0029[3]; //0x0029
+        std::int32_t double_tap_frames; //0x002C
+    };
+    static_assert(offsetof(lane_cover_control, cover_visible) == 0x28);
+    static_assert(offsetof(lane_cover_control, double_tap_frames) == 0x2c);
 
 	auto max_entries() -> std::size_t;
 	auto player_scores_size() -> std::size_t;

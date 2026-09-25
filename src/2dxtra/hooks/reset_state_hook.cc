@@ -21,6 +21,7 @@
 #include "score_invalidator_hook.h"
 #include "../features/fast_slow_display.h"
 #include "../features/timing_histogram.h"
+#include "../features/hi_speed_reset.h"
 
 namespace iidxtra::reset_state_hook
 {
@@ -44,6 +45,7 @@ namespace iidxtra::reset_state_hook
         fast_slow_display::reset();
         timing_histogram::reset();
         autoretry::reset();
+        hi_speed_reset::reset();
     }
 
 	auto reset_state_hook_fn(std::uint32_t a1) -> void*

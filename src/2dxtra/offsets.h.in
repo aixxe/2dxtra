@@ -14,89 +14,98 @@ struct offsets
     std::uintptr_t DLL_IMAGE_SIZE;
 
     // offsets: code
-    std::uint8_t* SOFT_REV_PATCH;         // call replaced by a store of the soft revision
-    std::uint8_t* INPUT_POLL_FN;          // IO::InputManagerIIDX vftable slot 3
-    std::uint8_t* ARENA_PHASE_PATCH;      // reads the arena phase; stubbed to force local arena
-    std::uint8_t* MUSIC_SELECT_CTOR;      // builds the music list; runs once per music select
-    std::uint8_t* DAN_SELECT_CTOR;        // CDanSelectScene scene-enter virtual
-    std::uint8_t* SCENE_DTOR;             // scene teardown; disables chart switching
-    std::uint8_t* STAGE_RESULT_FN;        // CStageResultScene scene-enter virtual
-    std::uint8_t* RESET_STATE_FN;         // clears one player's game data on card in
-    std::uint8_t* MSELECT_GENRE_C;        // renders the hovered entry's genre and title
-    std::uint8_t* MSELECT_GENRE_B;        // `cmp music_entry::texture_genre, 0` inside the above
-    std::uint8_t* MSELECT_GENRE_A;        // call inside the above that draws the genre text
-    std::uint8_t* MSELECT_GENRE_TEXT_FN;  // the wide/UTF-16 text renderer it calls
-    std::uint8_t* INIT_TEXT_RENDER_FN;    // boot debug text renderer ("Initialize Game")
-    std::uint8_t* BOOT_MODEL_TEXT_CALL;   // call that draws the boot model string
-    std::uint8_t* TITLE_MODEL_TEXT_CALL;  // call that draws the title-screen model string
-    std::uint8_t* TEXT_INIT_FN;           // initialises a text property block
-    std::uint8_t* TEXT_RENDER_FN;         // ASCII text renderer
-    std::uint8_t* RESULT_ARTIST_FN;       // call that draws the artist line on the result screen
-    std::uint8_t* LOAD_CHART_FN_B;        // reads one .1 chart into the scratch buffer
-    std::uint8_t* LOAD_CHART_FN_A;        // outer loader; knows which player is loading
-    std::uint8_t* CHART_ANALYZE_FN;       // chart load + analyze pass run during boot
-    std::uint8_t* CHART_ANALYZE_RESULT;   // instruction after the chart read (rax = bytes, rdi = buffer)
-    std::uint8_t* CHART_CALC_RADAR_FN;    // computes the six radar values of a difficulty
-    std::uint8_t* GET_APP_CONFIG;         // returns CApplicationConfig
-    std::uint8_t* GET_MUSIC_DATA;         // returns the music_data.bin blob
-    std::uint8_t* LOAD_AUDIO_FN;          // loads a sound file into the sound bank
-    std::uint8_t* GET_SOUND_ENTRY_FN;     // returns the sound bank entry for a sound index
-    std::uint8_t* XRPC_APPLY_FN;          // the game's wrapper around avs2-ea3 xrpc_apply
-    std::uint8_t* REG_DISPATCH_FN;        // builds and fires the score save request
-    std::uint8_t* REG_PATCH_ADDR;         // the call inside it that queues the request
-    std::uint8_t* SCORE_INVALID_FN;       // returns whether this play may save
-    std::uint8_t* DAN_SAVE_FN;            // queues the dan course result
-    std::uint8_t* EAAPPLI_SAVE_FN;        // queues the eamuse app result
-    std::uint8_t* MDATA_LOAD_FN;          // runs shortly after music_data is populated
-    std::uint8_t* IS_BTN_DOWN_FN_A;       // autoplay gate in the "button pressed" helper
-    std::uint8_t* IS_BTN_DOWN_FN_B;       // autoplay gate in the "button held" helper
-    std::uint8_t* AUTO_BEAM_PATCH;        // autoplay gate in the lane beam renderer
-    std::uint8_t* AUTO_BEAM_FN;           // that renderer; rcx -> block whose first dword is the player
-    std::uint8_t* CARD_OUT_VFUNC;         // slot 0 of the CCardOutScene vftable
-    std::uint8_t* RENDERER_PATCH;         // call nop'd while the swap chain vtable is swapped
-    std::uint8_t* APPLY_RANDOM_FN;        // applies the random modifier
-    std::uint8_t* DARK_MODE_PATCH;        // branch over the play field draw
-    std::uint8_t* MEASURE_PATCH;          // branch over the measure bar draw
-    std::uint8_t* BPM_BAR_PATCH;          // start of the pulsing bpm bar draw
-    std::uintptr_t BPM_BAR_PATCH_JMP;     // relative jump past that draw
-    std::uint8_t* PLAY_FIELD_LOAD;        // fills the play field note table
-    std::uint8_t* RETRY_CHECK_A;          // quick retry check that tests the EFFECT bit
-    std::uint8_t* RETRY_CHECK_B;          // quick retry check that tests the VEFX bit
-    std::uint8_t* GHOST_TARGET_FN;        // call that draws the "+????" pacemaker ghost text
-    std::uint8_t* GRAPH_TARGET_FN;        // call that draws the "TARGET:+????" pacemaker text
-    std::uint8_t* GRAPH_CONDITION;        // gate on whether that text is drawn at all
-    std::uint8_t* FAIL_ANIMATION_FN;      // call that starts the stage failed animation
-    std::uint8_t* FAIL_PLAY_SFX_FN;       // call that plays the stage failed sound effect
-    std::uint8_t* FAIL_DURATION_JMP;      // branch checking whether that animation is done
-    std::uint8_t* WNDPROC_FN;             // "PropClassWindowProc" for the game window
-    std::uint8_t* TIMING_HOOK_FN;         // last chance to change the judge windows before play
-    std::uint8_t* ATTRACT_SELECT_FN;      // picks the next attract demo chart
-    std::uint8_t* IS_SEPARATE_SCRATCH_FN; // whether separate FAST/SLOW for scratch option is enabled
-    std::uint8_t* SPRITE_DRAW_FN;         // creates a named sprite at its native position and layer
-    std::uint8_t* JUDGE_APPLY_FN;         // applies a note judgment; used to obtain ms timing info
-    std::uint8_t* JUDGE_DISPLAY_FN;       // updates judge, combo, fast/slow to be drawn
-    std::uint8_t* JUDGE_DRAW_FS_KEYS_FN;  // draws FAST/SLOW indicator for keys (or both if combined)
-    std::uint8_t* JUDGE_DRAW_FS_SC_FN;    // draws the separate scratch FAST/SLOW indicator
-    std::uint8_t* JUDGE_DISPLAY_INIT_FN;  // initialises one player's judgment display state
-    std::uint8_t* JUDGE_PRESS_RETURN;     // return address of general timing calculation
-    std::uint8_t* JUDGE_RELEASE_RETURN;   // return address of CN release timing calculation
+    std::uint8_t* SOFT_REV_PATCH;           // call replaced by a store of the soft revision
+    std::uint8_t* INPUT_POLL_FN;            // IO::InputManagerIIDX vftable slot 3
+    std::uint8_t* ARENA_PHASE_PATCH;        // reads the arena phase; stubbed to force local arena
+    std::uint8_t* MUSIC_SELECT_CTOR;        // builds the music list; runs once per music select
+    std::uint8_t* DAN_SELECT_CTOR;          // CDanSelectScene scene-enter virtual
+    std::uint8_t* SCENE_DTOR;               // scene teardown; disables chart switching
+    std::uint8_t* STAGE_RESULT_FN;          // CStageResultScene scene-enter virtual
+    std::uint8_t* RESET_STATE_FN;           // clears one player's game data on card in
+    std::uint8_t* MSELECT_GENRE_C;          // renders the hovered entry's genre and title
+    std::uint8_t* MSELECT_GENRE_B;          // `cmp music_entry::texture_genre, 0` inside the above
+    std::uint8_t* MSELECT_GENRE_A;          // call inside the above that draws the genre text
+    std::uint8_t* MSELECT_GENRE_TEXT_FN;    // the wide/UTF-16 text renderer it calls
+    std::uint8_t* INIT_TEXT_RENDER_FN;      // boot debug text renderer ("Initialize Game")
+    std::uint8_t* BOOT_MODEL_TEXT_CALL;     // call that draws the boot model string
+    std::uint8_t* TITLE_MODEL_TEXT_CALL;    // call that draws the title-screen model string
+    std::uint8_t* TEXT_INIT_FN;             // initialises a text property block
+    std::uint8_t* TEXT_RENDER_FN;           // ASCII text renderer
+    std::uint8_t* RESULT_ARTIST_FN;         // call that draws the artist line on the result screen
+    std::uint8_t* LOAD_CHART_FN_B;          // reads one .1 chart into the scratch buffer
+    std::uint8_t* LOAD_CHART_FN_A;          // outer loader; knows which player is loading
+    std::uint8_t* CHART_ANALYZE_FN;         // chart load + analyze pass run during boot
+    std::uint8_t* CHART_ANALYZE_RESULT;     // instruction after the chart read (rax = bytes, rdi = buffer)
+    std::uint8_t* CHART_CALC_RADAR_FN;      // computes the six radar values of a difficulty
+    std::uint8_t* GET_APP_CONFIG;           // returns CApplicationConfig
+    std::uint8_t* GET_MUSIC_DATA;           // returns the music_data.bin blob
+    std::uint8_t* LOAD_AUDIO_FN;            // loads a sound file into the sound bank
+    std::uint8_t* GET_SOUND_ENTRY_FN;       // returns the sound bank entry for a sound index
+    std::uint8_t* XRPC_APPLY_FN;            // the game's wrapper around avs2-ea3 xrpc_apply
+    std::uint8_t* REG_DISPATCH_FN;          // builds and fires the score save request
+    std::uint8_t* REG_PATCH_ADDR;           // the call inside it that queues the request
+    std::uint8_t* SCORE_INVALID_FN;         // returns whether this play may save
+    std::uint8_t* DAN_SAVE_FN;              // queues the dan course result
+    std::uint8_t* EAAPPLI_SAVE_FN;          // queues the eamuse app result
+    std::uint8_t* MDATA_LOAD_FN;            // runs shortly after music_data is populated
+    std::uint8_t* IS_BTN_DOWN_FN_A;         // autoplay gate in the "button pressed" helper
+    std::uint8_t* IS_BTN_DOWN_FN_B;         // autoplay gate in the "button held" helper
+    std::uint8_t* AUTO_BEAM_PATCH;          // autoplay gate in the lane beam renderer
+    std::uint8_t* AUTO_BEAM_FN;             // that renderer; rcx -> block whose first dword is the player
+    std::uint8_t* CARD_OUT_VFUNC;           // slot 0 of the CCardOutScene vftable
+    std::uint8_t* RENDERER_PATCH;           // call nop'd while the swap chain vtable is swapped
+    std::uint8_t* APPLY_RANDOM_FN;          // applies the random modifier
+    std::uint8_t* DARK_MODE_PATCH;          // branch over the play field draw
+    std::uint8_t* MEASURE_PATCH;            // branch over the measure bar draw
+    std::uint8_t* BPM_BAR_PATCH;            // start of the pulsing bpm bar draw
+    std::uintptr_t BPM_BAR_PATCH_JMP;       // relative jump past that draw
+    std::uint8_t* PLAY_FIELD_LOAD;          // fills the play field note table
+    std::uint8_t* RETRY_CHECK_A;            // quick retry check that tests the EFFECT bit
+    std::uint8_t* RETRY_CHECK_B;            // quick retry check that tests the VEFX bit
+    std::uint8_t* GHOST_TARGET_FN;          // call that draws the "+????" pacemaker ghost text
+    std::uint8_t* GRAPH_TARGET_FN;          // call that draws the "TARGET:+????" pacemaker text
+    std::uint8_t* GRAPH_CONDITION;          // gate on whether that text is drawn at all
+    std::uint8_t* FAIL_ANIMATION_FN;        // call that starts the stage failed animation
+    std::uint8_t* FAIL_PLAY_SFX_FN;         // call that plays the stage failed sound effect
+    std::uint8_t* FAIL_DURATION_JMP;        // branch checking whether that animation is done
+    std::uint8_t* WNDPROC_FN;               // "PropClassWindowProc" for the game window
+    std::uint8_t* TIMING_HOOK_FN;           // last chance to change the judge windows before play
+    std::uint8_t* ATTRACT_SELECT_FN;        // picks the next attract demo chart
+    std::uint8_t* IS_SEPARATE_SCRATCH_FN;   // whether separate FAST/SLOW for scratch option is enabled
+    std::uint8_t* SPRITE_DRAW_FN;           // creates a named sprite at its native position and layer
+    std::uint8_t* JUDGE_APPLY_FN;           // applies a note judgment; used to obtain ms timing info
+    std::uint8_t* JUDGE_DISPLAY_FN;         // updates judge, combo, fast/slow to be drawn
+    std::uint8_t* JUDGE_DRAW_FS_KEYS_FN;    // draws FAST/SLOW indicator for keys (or both if combined)
+    std::uint8_t* JUDGE_DRAW_FS_SC_FN;      // draws the separate scratch FAST/SLOW indicator
+    std::uint8_t* JUDGE_DISPLAY_INIT_FN;    // initialises one player's judgment display state
+    std::uint8_t* JUDGE_PRESS_RETURN;       // return address of general timing calculation
+    std::uint8_t* JUDGE_RELEASE_RETURN;     // return address of CN release timing calculation
+    std::uint8_t* HI_SPEED_RESET_PATCH;     // double-START cover XOR; RSI = lane-cover controller
+    std::uint8_t* HI_SPEED_RESET_CONTINUE;  // shared lane/green-number recomputation after toggle
+    std::uint8_t* HI_SPEED_ADJUST_CALL;     // CALL to START+turntable adjustment; RCX = controller
+    std::uint8_t* GET_PLAYER_OPTIONS;       // returns runtime player options
+    std::uint8_t* IS_DOUBLE_PLAY;           // native SP/DP selector used by option accessors
+    std::uint8_t* GET_HI_SPEED_MODE;        // (options, player, style); 1 = Floating Hi-Speed
+    std::uint8_t* GET_SAVED_HI_SPEED;       // returns option speed in native scroll-speed units
+    std::uint8_t* SET_HI_SPEED;             // native clamped, interpolated scroll-speed setter
 
     // offsets: variables
-    std::uint8_t* GAME_MODEL;             // the mutable ea3 model string ("***:*:*:*:**********")
-    std::uint8_t* GAME_STATE;             // bm2dx::state_t
-    std::uint8_t* INPUT_MANAGER;          // the IO::InputManagerIIDX singleton
-    std::uint8_t* PLAYER_BLOCK;           // base of player 0's game data block
-    std::uint8_t* SCORES_P1;              // player 1 score table
-    std::uint8_t* SCORES_P2;              // player 2 score table
-    std::uint8_t* RIVAL_SCORES_P1;        // player 1 rival score tables
-    std::uint8_t* RIVAL_SCORES_P2;        // player 2 rival score tables
-    std::uintptr_t MAX_ENTRIES;           // music entries per play style in those tables
-    std::uint8_t* D3D9_DEVICE;            // pointer to the game's IDirect3DDevice9
-    std::uint8_t* AUTO_PLAY;              // the game's own autoplay flag
-    std::uint8_t* RANDOM_DATA;            // bm2dx::random_data_t
-    std::uint8_t* PLAY_STATE;             // bm2dx::play_state_t
-    std::uint8_t* PLAY_SESSION;           // bm2dx::play_session_t
-    std::uint8_t* DEAD_STATE;             // bm2dx::dead_state_t
+    std::uint8_t* GAME_MODEL;               // the mutable ea3 model string ("***:*:*:*:**********")
+    std::uint8_t* GAME_STATE;               // bm2dx::state_t
+    std::uint8_t* INPUT_MANAGER;            // the IO::InputManagerIIDX singleton
+    std::uint8_t* PLAYER_BLOCK;             // base of player 0's game data block
+    std::uint8_t* SCORES_P1;                // player 1 score table
+    std::uint8_t* SCORES_P2;                // player 2 score table
+    std::uint8_t* RIVAL_SCORES_P1;          // player 1 rival score tables
+    std::uint8_t* RIVAL_SCORES_P2;          // player 2 rival score tables
+    std::uintptr_t MAX_ENTRIES;             // music entries per play style in those tables
+    std::uint8_t* D3D9_DEVICE;              // pointer to the game's IDirect3DDevice9
+    std::uint8_t* AUTO_PLAY;                // the game's own autoplay flag
+    std::uint8_t* RANDOM_DATA;              // bm2dx::random_data_t
+    std::uint8_t* PLAY_STATE;               // bm2dx::play_state_t
+    std::uint8_t* PLAY_SESSION;             // bm2dx::play_session_t
+    std::uint8_t* DEAD_STATE;               // bm2dx::dead_state_t
+    std::uint8_t* HI_SPEED_STATE;           // native scroll-speed singleton
 };
 
 auto inline resolve_offsets(std::uint8_t* base) -> std::optional<offsets>

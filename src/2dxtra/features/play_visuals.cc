@@ -28,7 +28,6 @@ namespace iidxtra::play_visuals
     auto update_no_measure_lines() -> void
     {
         auto static patch = util::branch_patch { bm2dx::addr->MEASURE_PATCH };
-
         no_measure_lines ? patch.enable(): patch.disable();
     }
 

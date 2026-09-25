@@ -72,6 +72,14 @@ versions.push_back({
     .JUDGE_DISPLAY_INIT_FN    = base + 0x0909d10, // initializes judgment display state and judge_great_yellow sprites
     .JUDGE_PRESS_RETURN       = base + 0x0821ce1, // return after general timing judgment call; continuation pattern [pattern]
     .JUDGE_RELEASE_RETURN     = base + 0x0820c8a, // return after CN release timing judgment call; continuation pattern [pattern]
+    .HI_SPEED_RESET_PATCH     = base + 0x090a253, // xor byte ptr [rsi+28h], 1; native double-START branch
+    .HI_SPEED_RESET_CONTINUE  = base + 0x090a36a, // mov rcx, rsi; call lane/green-number predicate
+    .HI_SPEED_ADJUST_CALL     = base + 0x090b926, // call 0x90bc70; RCX = controller, 5 bytes
+    .GET_PLAYER_OPTIONS       = base + 0x08854a0, // runtime options singleton accessor
+    .IS_DOUBLE_PLAY           = base + 0x082e0f0, // SP/DP selector used by option accessors
+    .GET_HI_SPEED_MODE        = base + 0x0897aa0, // selected option block +0x1c
+    .GET_SAVED_HI_SPEED       = base + 0x0895b80, // option block +4 divided by native speed scale
+    .SET_HI_SPEED             = base + 0x0829630, // preserves interpolation, clamps target speed
 
     // offsets: data
     .GAME_MODEL               = base + 0x1080d40, // the mutable copy of the ea3 model string
@@ -89,4 +97,5 @@ versions.push_back({
     .PLAY_STATE               = base + 0xa7ed450, // per-play score/note counters and the pacemaker target
     .PLAY_SESSION             = base + 0xaba9a30, // gameplay session block (pacemaker type, personal best, in-game flag)
     .DEAD_STATE               = base + 0xaba95e0, // per-player alive flags from the failure handler's shared getter
+    .HI_SPEED_STATE           = base + 0xaaad6c0, // singleton returned by 0x8297e0
 });
