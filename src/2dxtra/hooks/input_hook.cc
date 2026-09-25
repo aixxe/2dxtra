@@ -1,4 +1,5 @@
 #include <bitset>
+#include <chrono>
 #include <MinHook.h>
 #include "../log.h"
 #include "../game.h"
@@ -10,12 +11,13 @@ namespace iidxtra::input_hook
 {
 	void* (*original_input_fn) (bm2dx::InputManagerIIDX*) = nullptr;
 
-	// How long the second EFFECT tap may arrive after the first, in seconds.
-	auto constexpr double_tap_window = 0.2;
+	// How long the second EFFECT tap may arrive after the first, in milliseconds.
+	auto constexpr double_tap_window = std::chrono::milliseconds { 200 };
 
 	auto input_hook_fn(bm2dx::InputManagerIIDX* a1) -> void*
 	{
-		auto static timeout = 0;
+		using clock = std::chrono::steady_clock;
+		auto static timeout = clock::now();
 
 		// Not zero-initialized here; will be overwritten every poll
 		bm2dx::input_t old_state;
@@ -44,12 +46,10 @@ namespace iidxtra::input_hook
 
 		// toggle the gui state
 		{
-			if (timeout > 0)
-				timeout--;
-
 			if (std::bitset<32>(a1->data.buttons).test(effect_bit))
 			{
-				if (timeout > 0)
+				auto const now = clock::now();
+				if (now < timeout)
 				{
 					// second tap occurred within the window
 					// check if we're allowed to open the gui
@@ -58,12 +58,12 @@ namespace iidxtra::input_hook
 					else
 						gui::visible = !gui::visible;
 
-					timeout = 0;
+					timeout = now;
 				}
 				else
 				{
 					// now waiting for the next tap
-					timeout = static_cast<int>(bm2dx::config->target_fps * double_tap_window);
+					timeout = now + double_tap_window;
 				}
 			}
 		}
