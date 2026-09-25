@@ -45,7 +45,6 @@ namespace iidxtra::gui::main_window
     auto render() -> void
     {
         static const char* settings_status = nullptr;
-        static bool settings_success = false;
 
 		// darken game
         ImGui::GetBackgroundDrawList()->AddRectFilled({0, 0}, {ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y}, IM_COL32(0, 0, 0, 200), 0, 0);
@@ -455,41 +454,21 @@ namespace iidxtra::gui::main_window
                     {
                         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
                         {
-                            ImGui::Text("Save Settings to Database");
-                            ImGui::SameLine(285);
-                            if (ImGui::Button("Save##Settings"))
-                            {
-                                settings_success = settings::save();
-                                settings_status = settings_success ? "Saved successfully" : "Error while saving to disk";
-                            }
-                        }
-                        ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Restore these options at the next game start");
-                    }
-                    {
-                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
-                        {
-                            ImGui::Text("Reset to Default");
+                            ImGui::Text("Reset settings");
                             ImGui::SameLine(285);
                             ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
                             if (ImGui::Button("Reset##Settings"))
                             {
                                 settings::reset();
-                                settings_success = true;
-                                settings_status = "Defaults restored (not saved)";
+                                settings_status = "Default settings restored";
                             }
                             ImGui::EndDisabled();
                         }
                         ImGui::PopStyleVar();
-                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Reset to default settings");
+                        ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Reset all settings to default");
                     }
                     if (settings_status)
-                    {
-                        if (settings_success)
-                            ImGui::TextColored({0.2f, 0.8f, 0.2f, 1.f}, "%s", settings_status);
-                        else
-                            ImGui::TextColored({0.5f, 0.2f, 0.2f, 1.f}, "%s", settings_status);
-                    }
+                        ImGui::TextColored({0.2f, 0.8f, 0.2f, 1.f}, "%s", settings_status);
                     ImGui::EndDisabled();
                 }
 

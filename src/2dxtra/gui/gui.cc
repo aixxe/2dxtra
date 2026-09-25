@@ -6,7 +6,9 @@
 #include "main_window.h"
 #include "timing_histogram_window.h"
 #include "res/fonts.h"
+#include "../log.h"
 #include "../input.h"
+#include "../settings.h"
 #include "../features/chart_speed.h"
 #include "../hooks/renderer_hook.h"
 
@@ -140,6 +142,13 @@ namespace iidxtra::gui
 
     auto render() -> void
     {
+        #if FORCE_EVENT_MODE_ENABLED == 0
+        static bool was_visible = false;
+        if (was_visible && !visible && !settings::save())
+            log::print("Unable to save settings");
+        was_visible = visible;
+        #endif
+
 		timing_histogram_window::render();
         chart_speed::render_progress();
 		log_window::render();
