@@ -21,7 +21,7 @@ namespace iidxtra::play_visuals
 
     auto update_dark_mode() -> void
     {
-        auto static patch = util::branch_patch { bm2dx::addr->DARK_MODE_PATCH };
+        auto static patch = util::code_patch { bm2dx::addr->DARK_MODE_PATCH, { 0x90, 0x90 } };
         dark_mode ? patch.enable(): patch.disable();
     }
 

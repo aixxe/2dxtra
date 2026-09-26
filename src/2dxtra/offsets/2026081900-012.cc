@@ -46,7 +46,7 @@ versions.push_back({
     .CARD_OUT_VFUNC           = base + 0x0ca8890, // CCardOutScene vftable slot 0
     .RENDERER_PATCH           = base + 0x04f90d2, // call nop'd to freeze rendering while the vtable is swapped
     .APPLY_RANDOM_FN          = base + 0x07564b0, // prologue pattern [pattern]
-    .DARK_MODE_PATCH          = base + 0x0835428, // `je` over the play field draw, patched to an unconditional jmp
+    .DARK_MODE_PATCH          = base + 0x0835428, // short `je` over the black frame tint assignment, patched to two NOPs
     .MEASURE_PATCH            = base + 0x0756cf9, // branch over the measure bar draw, forced unconditional
     .BPM_BAR_PATCH            = base + 0x083479a, // start of the bpm gradient draw, replaced by a jmp past it
     .BPM_BAR_PATCH_JMP        =        0x00000ba, // relative jump to 0x834859

@@ -55,7 +55,7 @@ struct offsets
     std::uint8_t* CARD_OUT_VFUNC;           // slot 0 of the CCardOutScene vftable
     std::uint8_t* RENDERER_PATCH;           // call nop'd while the swap chain vtable is swapped
     std::uint8_t* APPLY_RANDOM_FN;          // applies the random modifier
-    std::uint8_t* DARK_MODE_PATCH;          // branch over the play field draw
+    std::uint8_t* DARK_MODE_PATCH;          // short branch over the black frame tint assignment
     std::uint8_t* MEASURE_PATCH;            // branch over the measure bar draw
     std::uint8_t* BPM_BAR_PATCH;            // start of the pulsing bpm bar draw
     std::uintptr_t BPM_BAR_PATCH_JMP;       // relative jump past that draw
