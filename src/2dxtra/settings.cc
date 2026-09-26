@@ -93,6 +93,8 @@ namespace iidxtra::settings
 
         apply("random.show_info.p1", unrandomizer::show_random_info_p1);
         apply("random.show_info.p2", unrandomizer::show_random_info_p2);
+        apply("random.hran.p1", unrandomizer::hran_enabled_p1);
+        apply("random.hran.p2", unrandomizer::hran_enabled_p2);
         apply("scratch_swap.enabled.p1", scratch_swap::enabled_p1);
         apply("scratch_swap.enabled.p2", scratch_swap::enabled_p2);
         apply("scratch_swap.lane.p1", scratch_swap::swap_lane_p1, -1, 6);

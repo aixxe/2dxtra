@@ -89,6 +89,12 @@ struct offsets
     std::uint8_t* GET_SAVED_HI_SPEED;       // returns option speed in native scroll-speed units
     std::uint8_t* SET_HI_SPEED;             // native clamped, interpolated scroll-speed setter
 
+    std::uint8_t* SRAN_CANDIDATE_CHECK;   // S-RAN note placement algorithm; used to override with H-RAN
+
+    std::uint8_t* RESULT_OPTIONS_FN;      // option text: result screen, Analyze Play on subscreen
+    std::uint8_t* RETRY_OPTIONS_FN;       // option text: subscreen chart-retry dialog
+    std::uint8_t* PACEMAKER_OPTIONS_FN;   // option text: pacemaker panel
+
     // offsets: variables
     std::uint8_t* GAME_MODEL;               // the mutable ea3 model string ("***:*:*:*:**********")
     std::uint8_t* GAME_STATE;               // bm2dx::state_t

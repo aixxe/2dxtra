@@ -18,6 +18,9 @@ namespace iidxtra::unrandomizer
 	extern bool show_random_info_p1;
 	extern bool show_random_info_p2;
 
+	extern bool hran_enabled_p1;
+	extern bool hran_enabled_p2;
+
 	extern random_lut_t column_lut_p1;
 	extern random_lut_t column_lut_p2;
 

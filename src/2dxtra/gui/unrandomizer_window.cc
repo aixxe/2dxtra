@@ -39,6 +39,7 @@ namespace iidxtra::gui::unrandomizer_window
         auto& in_bind_mode = (player == 0 ? in_bind_mode_p1: in_bind_mode_p2);
         auto& in_bind_key = (player == 0 ? in_bind_key_p1: in_bind_key_p2);
         auto& show_random_info = (player == 0 ? unrandomizer::show_random_info_p1: unrandomizer::show_random_info_p2);
+        auto& hran_enabled = (player == 0 ? unrandomizer::hran_enabled_p1: unrandomizer::hran_enabled_p2);
 
         // Use Force Random
         {
@@ -216,6 +217,20 @@ namespace iidxtra::gui::unrandomizer_window
         }
         ImGui::EndDisabled();
 
+        {
+            ImGui::BeginDisabled(bm2dx::play_session->in_gameplay);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
+            ImGui::Text("Enable H-RAN");
+            ImGui::SameLine();
+            ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, " *");
+            ImGui::SameLine(350);
+            ImGui::Checkbox("##UseHRan", &hran_enabled);
+            ImGui::PopStyleVar();
+            ImGui::EndDisabled();
+            ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.f}, "Requires S-RAN");
+            ImGui::Separator();
+        }
+
         // Swap Scratch Lane
         {
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, -5.0f));
@@ -272,7 +287,7 @@ namespace iidxtra::gui::unrandomizer_window
     {
 		ImGui::SetNextWindowFocus();
 		ImGui::SetNextWindowPos({ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f}, 0, {0.5f, 0.5f});
-		ImGui::SetNextWindowSize({485, 295});
+		ImGui::SetNextWindowSize({485, 355});
 
 		ImGui::Begin("Configuration :: Un-randomizer", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 

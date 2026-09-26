@@ -81,6 +81,12 @@ versions.push_back({
     .GET_SAVED_HI_SPEED       = base + 0x07c8950, // option block +4 divided by native speed scale
     .SET_HI_SPEED             = base + 0x075c400, // preserves interpolation, clamps target speed
 
+    .SRAN_CANDIDATE_CHECK   = base + 0x0755856, // S-RAN note placement algorithm; used to override with H-RAN
+
+    .RESULT_OPTIONS_FN      = base + 0x07c9b90, // option text: result screen, Analyze Play on subscreen
+    .RETRY_OPTIONS_FN       = base + 0x07c92e0, // option text: subscreen chart-retry dialog
+    .PACEMAKER_OPTIONS_FN   = base + 0x09795e0, // option text: pacemaker panel
+
     // offsets: data
     .GAME_MODEL               = base + 0x0f81d40, // the mutable copy of the ea3 model string
     .GAME_STATE               = base + 0xabd7960, // state block; p1_active/p2_active at +0x10/+0x14 pin it down

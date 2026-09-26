@@ -81,6 +81,7 @@ set(SOURCE_FILES
     src/2dxtra/features/cn_override.cc
     src/2dxtra/features/chart_loader.cc
     src/2dxtra/features/unrandomizer.cc
+    src/2dxtra/features/play_option.cc
     src/2dxtra/features/scratch_swap.cc
     src/2dxtra/features/play_visuals.cc
     src/2dxtra/features/timing_modifier.cc
