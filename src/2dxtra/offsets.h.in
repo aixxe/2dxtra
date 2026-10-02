@@ -89,6 +89,9 @@ struct offsets
     std::uint8_t* GET_SAVED_HI_SPEED;       // returns option speed in native scroll-speed units
     std::uint8_t* SET_HI_SPEED;             // native clamped, interpolated scroll-speed setter
 
+    std::uint8_t* RANDOM_SEQUENCE_DRAW_FN;  // identifies display-only ticket reads
+    std::uint8_t* RANDOM_TICKET_DATA_FN;    // RandomLane::CRandomLaneTicketGameData getter
+
     // offsets: variables
     std::uint8_t* GAME_MODEL;               // the mutable ea3 model string ("***:*:*:*:**********")
     std::uint8_t* GAME_STATE;               // bm2dx::state_t

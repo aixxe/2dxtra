@@ -81,6 +81,9 @@ versions.push_back({
     .GET_SAVED_HI_SPEED       = base + 0x0895b80, // option block +4 divided by native speed scale
     .SET_HI_SPEED             = base + 0x0829630, // preserves interpolation, clamps target speed
 
+    .RANDOM_SEQUENCE_DRAW_FN  = base + 0x0904d70, // native Random Sequence renderer
+    .RANDOM_TICKET_DATA_FN    = base + 0x08855b0, // RandomLane::CRandomLaneTicketGameData getter
+
     // offsets: data
     .GAME_MODEL               = base + 0x1080d40, // the mutable copy of the ea3 model string
     .GAME_STATE               = base + 0xacd79a0, // state block; p1_active/p2_active at +0x10/+0x14 pin it down
